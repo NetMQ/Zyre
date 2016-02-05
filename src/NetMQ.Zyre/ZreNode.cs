@@ -14,6 +14,8 @@ namespace NetMQ.Zyre
     {
         private const int ZreDiscoveryPort = 5670; // IANA-assigned
         private const byte BeaconVersion = 0x1;
+        private const int ReapInterval = 1000; // 1 second
+
 
         private const int PeerEvasive = 10000; // 10 seconds' silence is evasive
         private const int PeerExpired = 30000; // 30 seconds' silence is expired
@@ -84,14 +86,6 @@ namespace NetMQ.Zyre
         public static ZreNode NewNode(NetMQSocket pipe, NetMQSocket outbox)
         {
             return new ZreNode(pipe, outbox);
-        }
-
-        /// <summary>
-        /// Dispose this class and all objects it holds
-        /// </summary>
-        public void Destroy()
-        {
-            Dispose();
         }
 
         /// <summary>
@@ -230,6 +224,10 @@ namespace NetMQ.Zyre
                     var value = request.Pop().ConvertToString();
                     m_headers[name] = value;
                     break;
+                case "SET PORT":
+                    var str = request.Pop().ConvertToString();
+                    int.TryParse(str, out m_port);
+                    break;
                 case "SET INTERVAL":
                     var intervalStr = request.Pop().ConvertToString();
                     TimeSpan.TryParse(intervalStr, out m_interval);
@@ -289,7 +287,7 @@ namespace NetMQ.Zyre
                         }
                     }
                     break;
-                case "Leave":
+                case "LEAVE":
                     var groupNameLeave = request.Pop().ConvertToString();
                     ZreGroup groupLeave;
                     if (m_ownGroups.TryGetValue(groupNameLeave, out groupLeave))
@@ -357,13 +355,20 @@ namespace NetMQ.Zyre
             }
         }
 
-        private static Guid PopGuid(NetMQMessage request)
+        /// <summary>
+        /// Utility to read a Guid from a message.
+        /// We transmit 16 bytes that define the Uuid.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        private static Guid PopGuid(NetMQMessage message)
         {
-            var identity = request.Pop().ConvertToString();
-            Guid uuid;
-            Guid.TryParse(identity, out uuid);
+            var bytes = message.Pop().ToByteArray();
+            Debug.Assert(bytes.Length == 16);
+            var uuid = new Guid(bytes);
             return uuid;
         }
+
 
         /// <summary>
         /// Increment status
@@ -580,15 +585,19 @@ namespace NetMQ.Zyre
                     break;
                 case ZreMsg.MessageId.Whisper:
                     // Pass up to caller API as WHISPER event
-                    outMsg = new NetMQMessage();
-                    outMsg.Append("WHISPER");
-                    outMsg.Append(uuid.ToByteArray());
-                    outMsg.Append(peer.Name);
-                    for (int i = 0; i < msg.Whisper.Content.FrameCount; i++)
-                    {
-                        outMsg.Append(msg.Whisper.Content[i]);
-                    }
-                    m_outbox.SendMultipartMessage(outMsg);
+                    //outMsg = new NetMQMessage();
+                    //outMsg.Append("WHISPER");
+                    //outMsg.Append(uuid.ToByteArray());
+                    //outMsg.Append(peer.Name);
+                    //for (int i = 0; i < msg.Whisper.Content.FrameCount; i++)
+                    //{
+                    //    outMsg.Append(msg.Whisper.Content[i]);
+                    //}
+                    //m_outbox.SendMultipartMessage(outMsg);
+
+                    // TODO Check this method instead
+                    m_outbox.SendMoreFrame("WHISPER").SendMoreFrame(uuid.ToByteArray()).SendMoreFrame(peer.Name).SendMultipartMessage(msg.Whisper.Content);
+
                     break;
                 case ZreMsg.MessageId.Shout:
                     // Pass up to caller API as SHOUT event
@@ -661,6 +670,46 @@ namespace NetMQ.Zyre
             foreach (var peer in m_peers.Values)
             {
                 PingPeer(peer);
+            }
+        }
+
+        /// <summary>
+        /// This is the actor that runs a single node; it uses one thread, creates
+        /// a ZreNode at start and destroys that when finishing.
+        /// </summary>
+        /// <param name="pipe">Pipe back to application</param>
+        /// <param name="outbox">Outbox back to application</param>
+        public void RunActor(PairSocket pipe, NetMQSocket outbox)
+        {
+            using (var node = ZreNode.NewNode(pipe, outbox))
+            {
+                //  Signal actor successfully initialized
+                pipe.SignalOK();
+
+                var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
+
+                // Loop until the agent is terminated one way or another
+                var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+                while (!m_terminated)
+                {
+                    var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
+                    if (timeout > ReapInterval)
+                    {
+                        timeout = ReapInterval;
+                    }
+                    else if (timeout < 0)
+                    {
+                        timeout = 0;
+                    }
+                    if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
+                    {
+                        reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+                        node.PingAllPeers();
+                    }
+
+
+
+                }
             }
         }
 

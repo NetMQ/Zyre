@@ -58,5 +58,14 @@ namespace NetMQ.Zyre
             return (Dictionary<string, string>)Deserialize(serializedBytes);
         }
 
+        /// <summary>
+        /// Return deserialized object from serializedBytes serialized by Serializtion.Serialize()
+        /// </summary>
+        /// <param name="serializedBytes">buffer serialized by Serializtion.Serialize()</param>
+        /// <returns></returns>
+        public static List<Guid> DeserializeListGuid(byte[] serializedBytes)
+        {
+            return (List<Guid>)Deserialize(serializedBytes);
+        }
     }
 }
