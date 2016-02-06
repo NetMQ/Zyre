@@ -51,24 +51,45 @@ namespace NetMQ.Zyre
         const int ZyreVersionMajor = 1;
         const int ZyreVersionMinor = 1;
         const int ZyreVersionPatch = 0;
- 
-        private NetMQActor m_actor;     // A Zyre instance wraps the actor instance
-        private PairSocket m_inbox;     // Receives incoming cluster traffic
-        private Guid m_uuid;            // Copy of node UUID string
-        private string m_name;          // Copy of node name
-        private string m_endpoint;      // Copy of last endpoint bound to
+
+        /// <summary>
+        /// A Zyre instance wraps the actor instance
+        /// All node control is done through m_actor
+        /// </summary>
+        private NetMQActor m_actor;
+
+        /// <summary>
+        /// Receives incoming cluster traffic (traffic into Zyre from the network)
+        /// </summary>
+        private PairSocket m_inbox;
+
+        /// <summary>
+        /// Copy of node UUID
+        /// </summary>
+        private Guid m_uuid;
+
+        /// <summary>
+        /// Copy of node name
+        /// </summary>
+        private string m_name;
+
+        /// <summary>
+        /// Copy of last endpoint bound to
+        /// </summary>
+        private string m_endpoint;
 
         public Zyre NewZyre(string name)
         {
             var zyre = new Zyre();
 
             // Create front-to-back pipe pair for data traffic
-            // TODO I don't get this yet
-            var outbox = new PairSocket();
-            m_inbox = CreatePipe(outbox);
+            // outbox is passed to ZreNode for sending Zyre message traffic back to m_inbox
+            PairSocket outbox;
+            PairSocket.CreateSocketPair(out outbox, out m_inbox);
 
             // Start node engine and wait for it to be ready
-            m_actor = NetMQActor.Create(new Shim());
+            // All node control is done through m_actor
+            m_actor = ZreNode.Create(outbox);
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
@@ -77,13 +98,6 @@ namespace NetMQ.Zyre
             }
 
             return zyre;
-        }
-
-
-        private PairSocket CreatePipe(PairSocket outbox)
-        {
-
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -372,53 +386,5 @@ namespace NetMQ.Zyre
                 m_inbox = null;
             }
         }
-    }
-
-    public class Shim : IShimHandler
-    {
-        public void Run(PairSocket shim)
-        {
-            throw new NotImplementedException();
-        }
-
-        ///// <summary>
-        ///// This is the actor that runs a single node; it uses one thread, creates
-        ///// a ZreNode at start and destroys that when finishing.
-        ///// </summary>
-        ///// <param name="pipe">Pipe back to application</param>
-        ///// <param name="outbox">Outbox back to application</param>
-        //public void RunActor(PairSocket pipe, NetMQSocket outbox)
-        //{
-        //    using (var node = ZreNode.NewNode(pipe, outbox))
-        //    {
-        //        //  Signal actor successfully initialized
-        //        pipe.SignalOK();
-
-        //        var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
-
-        //        // Loop until the agent is terminated one way or another
-        //        var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-        //        while (!m_terminated)
-        //        {
-        //            var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
-        //            if (timeout > ReapInterval)
-        //            {
-        //                timeout = ReapInterval;
-        //            }
-        //            else if (timeout < 0)
-        //            {
-        //                timeout = 0;
-        //            }
-        //            if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
-        //            {
-        //                reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-        //                node.PingAllPeers();
-        //            }
-
-
-
-        //        }
-        //    }
-        //}
     }
 }

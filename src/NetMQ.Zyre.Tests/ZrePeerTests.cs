@@ -13,8 +13,11 @@ namespace NetMQ.Zyre.Tests
     [TestFixture]
     public class ZrePeerTests
     {
+        /// <summary>
+        /// Parallel to zeromq/zyre zyre_peer.c zyre_peer_test()
+        /// </summary>
         [Test]
-        public void SendMessageTest()
+        public void ZyrePeerTests()
         {
             var peers = new Dictionary<Guid, ZrePeer>();
             var me = Guid.NewGuid();

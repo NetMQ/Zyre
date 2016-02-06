@@ -15,35 +15,100 @@ namespace NetMQ.Zyre
         private const int ZreDiscoveryPort = 5670; // IANA-assigned
         private const byte BeaconVersion = 0x1;
         private const int ReapInterval = 1000; // 1 second
-
-
-        private const int PeerEvasive = 10000; // 10 seconds' silence is evasive
-        private const int PeerExpired = 30000; // 30 seconds' silence is expired
-        private const ushort UshortMax = ushort.MaxValue;
         private const byte UbyteMax = byte.MaxValue;
 
+        /// <summary>
+        /// Pipe back to application
+        /// ReceiveAPI() receives messages from the API and sends command replies and signals via the pipe
+        /// </summary>
+        private PairSocket m_pipe;
 
-        // We send command replies and signals to the pipe
-        private NetMQSocket m_pipe;                                 // Pipe back to application
+        /// <summary>
+        /// Outbox back to application
+        /// We send all Zyre messages to the API via the outbox, e.g. from ReceivePeer(), Start(), Stop(), 
+        /// </summary>
+        private PairSocket m_outbox;
 
-        // We send all Zyre messages to the outbox              
-        private NetMQSocket m_outbox;                               // Outbox back to application
+        /// <summary>
+        /// API shut us down
+        /// </summary>
+        private bool m_terminated;
 
-        private bool m_terminated;                                  // API shut us down
-        //private int m_beaconPort;                                 // Beacon port number
-        private TimeSpan m_interval;                                // Beacon interval
-        private NetMQPoller m_poller;                               // Socket poller
-        private NetMQBeacon m_beacon;                               // Beacon
-        private Guid m_uuid;                                        // Our UUID (guid), 16 bytes
-        private RouterSocket m_inbox;                               // Our inbox socket (ROUTER)
-        private string m_name;                                      // Our public name
-        private string m_endpoint;                                  // Our public endpoint
-        private int m_port;                                         // Our inbox port, if any
-        private byte m_status;                                      // Our own change counter
-        private readonly Dictionary<Guid, ZrePeer> m_peers;         // Hash of known peers, fast lookup. Key is m_uuid
-        private readonly Dictionary<string, ZreGroup> m_peerGroups; // Groups that our peers are in. Key is Group name
-        private readonly Dictionary<string, ZreGroup> m_ownGroups;  // Groups that we are in.  Key is Group name
-        private readonly Dictionary<string, string> m_headers;      // Our header values
+
+        /// <summary>
+        /// Beacon port number
+        /// </summary>
+        private int m_beaconPort;
+
+        /// <summary>
+        /// Beacon interval
+        /// </summary>
+        private TimeSpan m_interval;
+
+        /// <summary>
+        /// Socket poller
+        /// </summary>
+        private NetMQPoller m_poller;
+
+        /// <summary>
+        /// Beacon
+        /// </summary>
+        private NetMQBeacon m_beacon;
+
+        /// <summary>
+        /// Our UUID (guid), 16 bytes when transmitted
+        /// </summary>
+        private Guid m_uuid;
+
+        /// <summary>
+        /// Our inbox socket (ROUTER)
+        /// </summary>
+        private RouterSocket m_inbox;
+
+        /// <summary>
+        /// Our public name
+        /// </summary>
+        private string m_name;
+
+        /// <summary>
+        /// Our public endpoint
+        /// </summary>
+        private string m_endpoint;
+
+        /// <summary>
+        /// Our inbox port, if any
+        /// </summary>
+        private int m_port;
+
+        /// <summary>
+        /// Our own change counter
+        /// </summary>
+        private byte m_status;
+
+        /// <summary>
+        /// Hash of known peers, fast lookup. Key is m_uuid
+        /// </summary>
+        private readonly Dictionary<Guid, ZrePeer> m_peers;
+
+        /// <summary>
+        /// Groups that our peers are in. Key is Group name
+        /// </summary>
+        private readonly Dictionary<string, ZreGroup> m_peerGroups;
+
+        /// <summary>
+        /// Groups that we are in.  Key is Group name
+        /// </summary>
+        private readonly Dictionary<string, ZreGroup> m_ownGroups;
+
+        /// <summary>
+        /// Our header values
+        /// </summary>
+        private readonly Dictionary<string, string> m_headers;
+
+        /// <summary>
+        /// The actor used to communicate with the Shim
+        /// </summary>
+        private NetMQActor m_actor;
 
         //  Beacon frame has this format:
         //
@@ -52,18 +117,26 @@ namespace NetMQ.Zyre
         //  UUID        16 bytes
         //  port        2 bytes in network order
 
-        public ZreNode(NetMQSocket pipe, NetMQSocket outbox)
+        public static NetMQActor Create(PairSocket outbox)
+        {
+            var node = new ZreNode(outbox);
+            return node.m_actor;
+        }
+
+        private ZreNode(PairSocket outbox)
         {
             m_inbox = new RouterSocket();
+            m_actor = NetMQActor.Create(RunActor);
+
 
             //  Use ZMQ_ROUTER_HANDOVER so that when a peer disconnects and
             //  then reconnects, the new client connection is treated as the
             //  canonical one, and any old trailing commands are discarded.
-            // NOTE: This RouterHandover option apparently doesn't exist in NetMQ and I'm going to IGNORE it for now. DaleBrubaker Feb 1 2016
+            // NOTE: This RouterHandover option apparently doesn't exist in NetMQ 
+            //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
 
-            m_pipe = pipe;
             m_outbox = outbox;
-            m_poller = new NetMQPoller { m_pipe };
+            m_poller = new NetMQPoller {m_pipe};
             //m_beaconPort = ZreDiscoveryPort;
             m_interval = TimeSpan.Zero; // Use default
             m_uuid = Guid.NewGuid();
@@ -75,17 +148,6 @@ namespace NetMQ.Zyre
             //  Default name for node is first 6 characters of UUID:
             //  the shorter string is more readable in logs
             m_name = m_uuid.ToString().ToUpper().Substring(0, 6);
-        }
-
-        /// <summary>
-        /// Construct new ZreNode object
-        /// </summary>
-        /// <param name="pipe"></param>
-        /// <param name="outbox"></param>
-        /// <returns></returns>
-        public static ZreNode NewNode(NetMQSocket pipe, NetMQSocket outbox)
-        {
-            return new ZreNode(pipe, outbox);
         }
 
         /// <summary>
@@ -113,7 +175,7 @@ namespace NetMQ.Zyre
             PublishBeacon(m_port);
             m_beacon.Subscribe("ZRE");
             m_poller.Add(m_beacon);
-                // TODO: I'm not sure I need to do this, because NetMQBeacon does internal polling and has internal actor. Just hook to beacon ReceiveReady event?
+            // TODO: I'm not sure I need to do this, because NetMQBeacon does internal polling and has internal actor. Just hook to beacon ReceiveReady event?
 
             // Start polling on inbox
             m_poller.Add(m_inbox);
@@ -130,7 +192,7 @@ namespace NetMQ.Zyre
             PublishBeacon(0);
             Thread.Sleep(1); // Allow 1 msec for beacon to go out
             m_poller.Remove(m_beacon);
-                // TODO: I'm not sure I need to do this, because NetMQBeacon does internal polling and has internal actor. Just hook to beacon ReceiveReady event?
+            // TODO: I'm not sure I need to do this, because NetMQBeacon does internal polling and has internal actor. Just hook to beacon ReceiveReady event?
 
             // Stop polling on inbox
             m_poller.Remove(m_inbox);
@@ -249,7 +311,7 @@ namespace NetMQ.Zyre
                         var msg = new ZreMsg
                         {
                             Id = ZreMsg.MessageId.Whisper,
-                            Whisper = { Content = request }
+                            Whisper = {Content = request}
                         };
                         peer.Send(msg);
                     }
@@ -263,7 +325,7 @@ namespace NetMQ.Zyre
                         var msg = new ZreMsg
                         {
                             Id = ZreMsg.MessageId.Shout,
-                            Shout = { Content = request }
+                            Shout = {Content = request}
                         };
                         group.Send(msg);
                     }
@@ -277,7 +339,7 @@ namespace NetMQ.Zyre
                         var msg = new ZreMsg
                         {
                             Id = ZreMsg.MessageId.Join,
-                            Join = { Group = groupNameJoin }
+                            Join = {Group = groupNameJoin}
                         };
                         // Update status before sending command
                         IncrementStatus();
@@ -296,7 +358,7 @@ namespace NetMQ.Zyre
                         var msg = new ZreMsg
                         {
                             Id = ZreMsg.MessageId.Leave,
-                            Join = { Group = groupNameLeave }
+                            Join = {Group = groupNameLeave}
                         };
                         // Update status before sending command
                         IncrementStatus();
@@ -375,7 +437,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void IncrementStatus()
         {
-            m_status = m_status == UbyteMax ? (byte)0 : m_status++;
+            m_status = m_status == UbyteMax ? (byte) 0 : m_status++;
         }
 
         /// <summary>
@@ -673,46 +735,6 @@ namespace NetMQ.Zyre
             }
         }
 
-        /// <summary>
-        /// This is the actor that runs a single node; it uses one thread, creates
-        /// a ZreNode at start and destroys that when finishing.
-        /// </summary>
-        /// <param name="pipe">Pipe back to application</param>
-        /// <param name="outbox">Outbox back to application</param>
-        public void RunActor(PairSocket pipe, NetMQSocket outbox)
-        {
-            using (var node = ZreNode.NewNode(pipe, outbox))
-            {
-                //  Signal actor successfully initialized
-                pipe.SignalOK();
-
-                var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
-
-                // Loop until the agent is terminated one way or another
-                var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-                while (!m_terminated)
-                {
-                    var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
-                    if (timeout > ReapInterval)
-                    {
-                        timeout = ReapInterval;
-                    }
-                    else if (timeout < 0)
-                    {
-                        timeout = 0;
-                    }
-                    if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
-                    {
-                        reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-                        node.PingAllPeers();
-                    }
-
-
-
-                }
-            }
-        }
-
         public override string ToString()
         {
             return string.Format("name:{0} router endpoint:{1} status:{2}", m_name, m_endpoint, m_status);
@@ -769,5 +791,76 @@ namespace NetMQ.Zyre
                 group.Dispose();
             }
         }
+
+        public void RunActor(PairSocket shim)
+        {
+            m_pipe = shim;
+
+            //  Signal actor successfully initialized
+            shim.SignalOK();
+
+            var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
+
+            // Loop until the agent is terminated one way or another
+            var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+            while (!m_terminated)
+            {
+                var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
+                if (timeout > ReapInterval)
+                {
+                    timeout = ReapInterval;
+                }
+                else if (timeout < 0)
+                {
+                    timeout = 0;
+                }
+                if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
+                {
+                    reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+                    PingAllPeers();
+                }
+            }
+        }
+
+        ///// <summary>
+        ///// This is the actor that runs a single node; it uses one thread, creates
+        ///// a ZreNode at start and destroys that when finishing.
+        ///// </summary>
+        ///// <param name="pipe">Pipe back to application</param>
+        ///// <param name="outbox">Outbox back to application</param>
+        //public void RunActor(PairSocket pipe, NetMQSocket outbox)
+        //{
+        //    using (var node = ZreNode.NewNode(pipe, outbox))
+        //    {
+        //        //  Signal actor successfully initialized
+        //        pipe.SignalOK();
+
+        //        var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
+
+        //        // Loop until the agent is terminated one way or another
+        //        var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+        //        while (!m_terminated)
+        //        {
+        //            var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
+        //            if (timeout > ReapInterval)
+        //            {
+        //                timeout = ReapInterval;
+        //            }
+        //            else if (timeout < 0)
+        //            {
+        //                timeout = 0;
+        //            }
+        //            if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
+        //            {
+        //                reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+        //                node.PingAllPeers();
+        //            }
+
+
+
+        //        }
+        //    }
+        //}
+
     }
 }

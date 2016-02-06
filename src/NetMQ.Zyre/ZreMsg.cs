@@ -3,7 +3,7 @@
 //
 //    Codec class for ZreMsg.
 //
-//    Was generated using NetMQ.zproto and then extensively modified
+//    Was generated using NetMQ.zproto and then modified extensively.
 
 using System;
 using System.Collections.Generic;
