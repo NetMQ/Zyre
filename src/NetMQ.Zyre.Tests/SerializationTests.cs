@@ -15,8 +15,8 @@ namespace NetMQ.Zyre.Tests
         public void ListStringTest()
         {
             var stringsIn = new List<string> { "Item1", "Item2" };
-            var buffer = Serialization.Serialize(stringsIn);
-            var stringsOut = Serialization.DeserializeListString(buffer);
+            var buffer = Serialization.BinarySerialize(stringsIn);
+            var stringsOut = Serialization.BinaryDeserialize<List<string>>(buffer);
             stringsOut.Should().NotBeNull();
             stringsOut.Count.Should().Be(2);
             stringsOut[0].Should().Be("Item1");
@@ -27,8 +27,8 @@ namespace NetMQ.Zyre.Tests
         public void DictionaryStringStringTest()
         {
             var dictIn = new Dictionary<string, string> { { "Key1", "Value1" }, {"Key2", "Value2"} };
-            var buffer = Serialization.Serialize(dictIn);
-            var dictOut = Serialization.DeserializeDictStringString(buffer);
+            var buffer = Serialization.BinarySerialize(dictIn);
+            var dictOut = Serialization.BinaryDeserialize<Dictionary<string, string>>(buffer);
             dictOut.Should().NotBeNull();
             dictOut.Count.Should().Be(2);
             dictOut.Keys.First().Should().Be("Key1");

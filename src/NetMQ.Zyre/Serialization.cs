@@ -19,7 +19,7 @@ namespace NetMQ.Zyre
         /// <typeparam name="T"></typeparam>
         /// <param name="objectToSerialize"></param>
         /// <returns></returns>
-        public static byte[] Serialize<T>(T objectToSerialize)
+        public static byte[] BinarySerialize<T>(T objectToSerialize)
         {
             using (var ms = new MemoryStream())
             {
@@ -29,43 +29,19 @@ namespace NetMQ.Zyre
             }
         }
 
-        private static object Deserialize(byte[] serializedBytes)
+        /// <summary>
+        /// Return deserialized object from serializedBytes serialized by Serializtion.BinarySerialize()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serializedBytes">buffer serialized by Serializtion.BinarySerialize()</param>
+        /// <returns>T</returns>
+        public static T BinaryDeserialize<T>(byte[] serializedBytes)
         {
             using (var ms = new MemoryStream(serializedBytes))
             {
                 var binaryFormatter = new BinaryFormatter();
-                return  binaryFormatter.Deserialize(ms);
+                return (T) binaryFormatter.Deserialize(ms);
             }
-        }
-
-        /// <summary>
-        /// Return deserialized object from serializedBytes serialized by Serializtion.Serialize()
-        /// </summary>
-        /// <param name="serializedBytes">buffer serialized by Serializtion.Serialize()</param>
-        /// <returns>deserialized List of string</returns>
-        public static List<string> DeserializeListString(byte[] serializedBytes)
-        {
-            return (List<string>) Deserialize(serializedBytes);
-        }
-
-        /// <summary>
-        /// Return deserialized object from serializedBytes serialized by Serializtion.Serialize()
-        /// </summary>
-        /// <param name="serializedBytes">buffer serialized by Serializtion.Serialize()</param>
-        /// <returns></returns>
-        public static Dictionary<string, string> DeserializeDictStringString(byte[] serializedBytes)
-        {
-            return (Dictionary<string, string>)Deserialize(serializedBytes);
-        }
-
-        /// <summary>
-        /// Return deserialized object from serializedBytes serialized by Serializtion.Serialize()
-        /// </summary>
-        /// <param name="serializedBytes">buffer serialized by Serializtion.Serialize()</param>
-        /// <returns></returns>
-        public static List<Guid> DeserializeListGuid(byte[] serializedBytes)
-        {
-            return (List<Guid>)Deserialize(serializedBytes);
         }
     }
 }

@@ -246,7 +246,7 @@ namespace NetMQ.Zyre
         {
             m_actor.SendFrame("PEERS");
             var peersBuffer = m_actor.ReceiveFrameBytes();
-            var peers = Serialization.DeserializeListGuid(peersBuffer);
+            var peers = Serialization.BinaryDeserialize<List<Guid>>(peersBuffer);
             return peers;
         }
 

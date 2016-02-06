@@ -309,7 +309,7 @@ namespace NetMQ.Zyre
                     break;
                 case "PEERS":
                     // Send the list of the m_peers keys
-                    var peersKeyBuffer = Serialization.Serialize(m_peers.Keys.ToList());
+                    var peersKeyBuffer = Serialization.BinarySerialize(m_peers.Keys.ToList());
                     m_pipe.SendFrame(peersKeyBuffer);
                     break;
                 case "PEER ENDPOINT":
@@ -339,12 +339,12 @@ namespace NetMQ.Zyre
                     break;
                 case "PEER GROUPS":
                     // Send a list of the m_peerGroups keys, comma-delimited
-                    var peerGroupsKeyBuffer = Serialization.Serialize(m_peerGroups.Keys.ToList());
+                    var peerGroupsKeyBuffer = Serialization.BinarySerialize(m_peerGroups.Keys.ToList());
                     m_pipe.SendFrame(peerGroupsKeyBuffer);
                     break;
                 case "OWN GROUPS":
                     // Send a list of the m_ownGroups keys, comma-delimited
-                    var ownGroupsKeyBuffer = Serialization.Serialize(m_ownGroups.Keys.ToList());
+                    var ownGroupsKeyBuffer = Serialization.BinarySerialize(m_ownGroups.Keys.ToList());
                     m_pipe.SendFrame(ownGroupsKeyBuffer);
                     break;
                 case "$TERM":
@@ -569,7 +569,7 @@ namespace NetMQ.Zyre
                     outMsg.Append("ENTER");
                     outMsg.Append(peer.Uuid.ToByteArray());
                     outMsg.Append(peer.Name);
-                    var headersBuffer = Serialization.Serialize(m_headers);
+                    var headersBuffer = Serialization.BinarySerialize(m_headers);
                     outMsg.Append(headersBuffer);
                     outMsg.Append(helloMessage.Endpoint);
                     m_outbox.SendMultipartMessage(outMsg);
