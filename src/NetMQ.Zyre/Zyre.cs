@@ -48,6 +48,10 @@ namespace NetMQ.Zyre
     /// </summary>
     public class Zyre : IDisposable
     {
+        const int ZyreVersionMajor = 1;
+        const int ZyreVersionMinor = 1;
+        const int ZyreVersionPatch = 0;
+ 
         private NetMQActor m_actor;     // A Zyre instance wraps the actor instance
         private PairSocket m_inbox;     // Receives incoming cluster traffic
         private Guid m_uuid;            // Copy of node UUID string
@@ -59,8 +63,9 @@ namespace NetMQ.Zyre
             var zyre = new Zyre();
 
             // Create front-to-back pipe pair for data traffic
-
+            // TODO I don't get this yet
             var outbox = new PairSocket();
+            m_inbox = CreatePipe(outbox);
 
             // Start node engine and wait for it to be ready
             m_actor = NetMQActor.Create(new Shim());
@@ -72,6 +77,13 @@ namespace NetMQ.Zyre
             }
 
             return zyre;
+        }
+
+
+        private PairSocket CreatePipe(PairSocket outbox)
+        {
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -250,11 +262,72 @@ namespace NetMQ.Zyre
             return peers;
         }
 
+        /// <summary>
+        /// Return the endpoint of a connected peer.
+        /// </summary>
+        /// <param name="peer">The peer identity</param>
+        /// <returns>the endpoint of a connected peer</returns>
+        public string PeerAddress(Guid peer)
+        {
+            m_actor.SendMoreFrame("PEER ENDPOINT");
+            m_actor.SendFrame(peer.ToByteArray());
+            return m_actor.ReceiveFrameString();
+        }
 
-        //TODO: Down to here
+        /// <summary>
+        /// Return the value of a header of a connected peer.  Returns String.Empty if peer
+        /// or key doesn't exist.
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="key"></param>
+        /// <returns>the value of a header of a connected peer, or String.Empty if peer or key doesn't exist</returns>
+        public string PeerHeaderValue(Guid peer, string key)
+        {
+            m_actor.SendMoreFrame("PEER HEADER");
+            m_actor.SendMoreFrame(peer.ToByteArray());
+            m_actor.SendFrame(key);
+            return m_actor.ReceiveFrameString();
+        }
 
+        /// <summary>
+        /// Return list of currently joined groups.
+        /// </summary>
+        /// <returns></returns>
+        public List<string> OwnGroups()
+        {
+            m_actor.SendMoreFrame("OWN GROUPS");
+            var result = Serialization.BinaryDeserialize<List<string>>(m_actor.ReceiveFrameBytes());
+            return result;
+        }
 
+        /// <summary>
+        /// Return list of groups known through connected peers.
+        /// </summary>
+        /// <returns></returns>
+        public List<string> PeerGroups()
+        {
+            m_actor.SendMoreFrame("PEER GROUPS");
+            var result = Serialization.BinaryDeserialize<List<string>>(m_actor.ReceiveFrameBytes());
+            return result;
+        }
 
+        /// <summary>
+        /// Return the node socket, for direct polling of the socket
+        /// </summary>
+        public PairSocket Socket { get { return m_inbox; } }
+
+        /// <summary>
+        /// Return the Zyre version for run-time API detection
+        /// </summary>
+        /// <param name="major"></param>
+        /// <param name="minor"></param>
+        /// <param name="patch"></param>
+        public void Version(out int major, out int minor, out int patch)
+        {
+            major = ZyreVersionMajor;
+            minor = ZyreVersionMinor;
+            patch = ZyreVersionPatch;
+        }
 
 
 
