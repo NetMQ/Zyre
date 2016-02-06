@@ -14,7 +14,6 @@ namespace NetMQ.Zyre
     {
         private const int ZreDiscoveryPort = 5670; // IANA-assigned
         private const byte BeaconVersion = 0x1;
-        private const int ReapInterval = 1000; // 1 second
         private const byte UbyteMax = byte.MaxValue;
 
         /// <summary>
@@ -106,9 +105,9 @@ namespace NetMQ.Zyre
         private readonly Dictionary<string, string> m_headers;
 
         /// <summary>
-        /// The actor used to communicate with the Shim
+        /// The actor used to communicate all control messages to and from Zyre
         /// </summary>
-        private NetMQActor m_actor;
+        private readonly NetMQActor m_actor;
 
         //  Beacon frame has this format:
         //
@@ -117,17 +116,19 @@ namespace NetMQ.Zyre
         //  UUID        16 bytes
         //  port        2 bytes in network order
 
-        public static NetMQActor Create(PairSocket outbox)
-        {
-            var node = new ZreNode(outbox);
-            return node.m_actor;
-        }
+        //public static NetMQActor GetActor()
+        //{
+        //    return NetMQActor.Create(Run); 
+        //}
 
-        private ZreNode(PairSocket outbox)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="pipe"></param>
+        /// <param name="outbox"></param>
+        public ZreNode(PairSocket pipe, PairSocket outbox)
         {
             m_inbox = new RouterSocket();
-            m_actor = NetMQActor.Create(RunActor);
-
 
             //  Use ZMQ_ROUTER_HANDOVER so that when a peer disconnects and
             //  then reconnects, the new client connection is treated as the
@@ -135,6 +136,7 @@ namespace NetMQ.Zyre
             // NOTE: This RouterHandover option apparently doesn't exist in NetMQ 
             //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
 
+            m_pipe = pipe;
             m_outbox = outbox;
             m_poller = new NetMQPoller {m_pipe};
             //m_beaconPort = ZreDiscoveryPort;
@@ -192,7 +194,6 @@ namespace NetMQ.Zyre
             PublishBeacon(0);
             Thread.Sleep(1); // Allow 1 msec for beacon to go out
             m_poller.Remove(m_beacon);
-            // TODO: I'm not sure I need to do this, because NetMQBeacon does internal polling and has internal actor. Just hook to beacon ReceiveReady event?
 
             // Stop polling on inbox
             m_poller.Remove(m_inbox);
@@ -792,75 +793,50 @@ namespace NetMQ.Zyre
             }
         }
 
-        public void RunActor(PairSocket shim)
+        public class Shim : IShimHandler
         {
-            m_pipe = shim;
+            private const int ReapInterval = 1000; // 1 second
 
-            //  Signal actor successfully initialized
-            shim.SignalOK();
-
-            var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
-
-            // Loop until the agent is terminated one way or another
-            var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-            while (!m_terminated)
+            /// <summary>
+            /// This is the actor that runs a single node; it uses one thread, creates
+            /// a ZreNode at start and destroys that when finishing.
+            /// </summary>
+            /// <param name="pipe">Pipe back to application</param>
+            /// <param name="outbox">Outbox back to application</param>
+            public void Run(PairSocket shim)
             {
-                var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
-                if (timeout > ReapInterval)
+                using (var node = new ZreNode(pipe, outbox))
                 {
-                    timeout = ReapInterval;
-                }
-                else if (timeout < 0)
-                {
-                    timeout = 0;
-                }
-                if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
-                {
-                    reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-                    PingAllPeers();
+                    //  Signal actor successfully initialized
+                    pipe.SignalOK();
+
+                    var items = new NetMQPoller {m_pipe, m_inbox, m_beacon};
+
+                    // Loop until the agent is terminated one way or another
+                    var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+                    while (!node.m_terminated)
+                    {
+                        var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
+                        if (timeout > ReapInterval)
+                        {
+                            timeout = ReapInterval;
+                        }
+                        else if (timeout < 0)
+                        {
+                            timeout = 0;
+                        }
+                        if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
+                        {
+                            reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
+                            node.PingAllPeers();
+                        }
+
+                        // TODO stuff from zyre.c
+
+                    }
                 }
             }
         }
-
-        ///// <summary>
-        ///// This is the actor that runs a single node; it uses one thread, creates
-        ///// a ZreNode at start and destroys that when finishing.
-        ///// </summary>
-        ///// <param name="pipe">Pipe back to application</param>
-        ///// <param name="outbox">Outbox back to application</param>
-        //public void RunActor(PairSocket pipe, NetMQSocket outbox)
-        //{
-        //    using (var node = ZreNode.NewNode(pipe, outbox))
-        //    {
-        //        //  Signal actor successfully initialized
-        //        pipe.SignalOK();
-
-        //        var items = new NetMQPoller { m_pipe, m_inbox, m_beacon };
-
-        //        // Loop until the agent is terminated one way or another
-        //        var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-        //        while (!m_terminated)
-        //        {
-        //            var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
-        //            if (timeout > ReapInterval)
-        //            {
-        //                timeout = ReapInterval;
-        //            }
-        //            else if (timeout < 0)
-        //            {
-        //                timeout = 0;
-        //            }
-        //            if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
-        //            {
-        //                reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-        //                node.PingAllPeers();
-        //            }
-
-
-
-        //        }
-        //    }
-        //}
-
     }
+
 }
