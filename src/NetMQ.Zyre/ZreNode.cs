@@ -795,6 +795,13 @@ namespace NetMQ.Zyre
 
         public class Shim : IShimHandler
         {
+            private readonly PairSocket m_outbox;
+
+            public Shim(PairSocket outbox)
+            {
+                m_outbox = outbox;
+            }
+
             private const int ReapInterval = 1000; // 1 second
 
             /// <summary>
@@ -802,15 +809,12 @@ namespace NetMQ.Zyre
             /// a ZreNode at start and destroys that when finishing.
             /// </summary>
             /// <param name="pipe">Pipe back to application</param>
-            /// <param name="outbox">Outbox back to application</param>
-            public void Run(PairSocket shim)
+            public void Run(PairSocket pipe)
             {
-                using (var node = new ZreNode(pipe, outbox))
+                using (var node = new ZreNode(pipe, m_outbox))
                 {
                     //  Signal actor successfully initialized
                     pipe.SignalOK();
-
-                    var items = new NetMQPoller {m_pipe, m_inbox, m_beacon};
 
                     // Loop until the agent is terminated one way or another
                     var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
@@ -825,6 +829,7 @@ namespace NetMQ.Zyre
                         {
                             timeout = 0;
                         }
+
                         if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
                         {
                             reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
@@ -832,6 +837,8 @@ namespace NetMQ.Zyre
                         }
 
                         // TODO stuff from zyre.c
+                        //var tmp = node.m_poller.IsRunning;
+                        //node.ReceivePeer();
 
                     }
                 }
