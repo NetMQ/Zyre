@@ -481,8 +481,19 @@ namespace NetMQ.Zyre
                     var ownGroupsKeyBuffer = Serialization.BinarySerialize(_ownGroups.Keys.ToList());
                     _pipe.SendFrame(ownGroupsKeyBuffer);
                     break;
+                case "endPipe":
                 case "$TERM":
                     _terminated = true;
+                    if (_beacon != null)
+                    {
+                        _beacon.Unsubscribe();
+                        _beacon.Dispose();
+                        _beacon = null;
+                    }
+                    if (_poller != null)
+                    {
+                        _poller.Stop();
+                    }
                     break;
                 default:
                     throw new ArgumentException(command);
@@ -870,6 +881,7 @@ namespace NetMQ.Zyre
             }
             if (_poller != null)
             {
+                _poller.Stop();
                 _poller.Dispose();
                 _poller = null;
             }
@@ -916,7 +928,10 @@ namespace NetMQ.Zyre
             _pipe.SignalOK();
 
             // polling until cancelled
-            _poller.Run();            
+            _poller.Run();
+
+            reapTimer.Enable = false;
+            reapTimer.Elapsed -= OnReapTimerElapsed;
         }
 
         private void OnReapTimerElapsed(object sender, NetMQTimerEventArgs e)
