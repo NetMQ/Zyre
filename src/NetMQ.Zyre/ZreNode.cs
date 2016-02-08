@@ -836,7 +836,7 @@ namespace NetMQ.Zyre
         /// - if peer has gone quiet, send TCP ping and emit EVASIVE event
         /// - if peer has disappeared, expire it
         /// </summary>
-        public void PingAllPeers()
+        public void PingAllPeersAndRemoveExpiredOnes()
         {
             foreach (var peer in _peers.Values)
             {
@@ -930,7 +930,7 @@ namespace NetMQ.Zyre
         private void OnReapTimerElapsed(object sender, NetMQTimerEventArgs e)
         {
             // Ping all peers and reap any expired ones
-            PingAllPeers();
+            PingAllPeersAndRemoveExpiredOnes();
         }
     }
 

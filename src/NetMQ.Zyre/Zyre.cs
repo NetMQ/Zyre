@@ -47,9 +47,9 @@ namespace NetMQ.Zyre
     /// </summary>
     public class Zyre : IDisposable
     {
-        const int ZyreVersionMajor = 1;
-        const int ZyreVersionMinor = 1;
-        const int ZyreVersionPatch = 0;
+        public const int ZyreVersionMajor = 1;
+        public const int ZyreVersionMinor = 1;
+        public const int ZyreVersionPatch = 0;
 
         /// <summary>
         /// A Zyre instance wraps the actor instance
@@ -77,10 +77,8 @@ namespace NetMQ.Zyre
         /// </summary>
         private string _endpoint;
 
-        public Zyre NewZyre(string name)
+        public Zyre (string name)
         {
-            var zyre = new Zyre();
-
             // Create front-to-back pipe pair for data traffic
             // outbox is passed to ZreNode for sending Zyre message traffic back to _inbox
             PairSocket outbox;
@@ -95,8 +93,6 @@ namespace NetMQ.Zyre
             {
                 _actor.SendMoreFrame("SET NAME").SendFrame(name);
             }
-
-            return zyre;
         }
 
         /// <summary>
@@ -106,7 +102,6 @@ namespace NetMQ.Zyre
         {
             get
             {
-                // Hold uuid string in zyre object so caller gets a safe reference
                 _actor.SendFrame("UUID");
                 var uuidBytes = _actor.ReceiveFrameBytes();
                 Debug.Assert(uuidBytes.Length == 16);
@@ -115,13 +110,20 @@ namespace NetMQ.Zyre
             }
         }
 
+        public string Name()
+        {
+            _actor.SendFrame("NAME");
+            var name = _actor.ReceiveFrameString();
+            return name;
+        }
+
         /// <summary>
         /// Set Name
         /// </summary>
         /// <param name="name">the name to set</param>
         public void SetName(string name)
         {
-            _actor.SendMoreFrame("SET HEADER").SendFrame(name);
+            _actor.SendMoreFrame("SET NAME").SendFrame(name);
         }
 
         /// <summary>
@@ -134,7 +136,7 @@ namespace NetMQ.Zyre
         public void SetHeader(string key, string format, params object[] args)
         {
             var value = string.Format(format, args);
-            _actor.SendMoreFrame(key).SendFrame(value);
+            _actor.SendMoreFrame("SET HEADER").SendMoreFrame(key).SendFrame(value);
         }
 
         /// <summary>
@@ -341,15 +343,6 @@ namespace NetMQ.Zyre
             minor = ZyreVersionMinor;
             patch = ZyreVersionPatch;
         }
-
-
-
-
-
-
-
-
-
 
         public override string ToString()
         {
