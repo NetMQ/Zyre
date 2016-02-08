@@ -15,28 +15,28 @@ namespace NetMQ.Zyre
         private const ushort UshortMax = ushort.MaxValue;
         private const byte UbyteMax = byte.MaxValue;
 
-        private DealerSocket m_mailbox;                 // Socket through to peer
-        private readonly Guid m_uuid;                   // Identity guid, 16 bytes
-        private string m_endpoint;                      // Endpoint connected to
-        private string m_name;                          // Peer's public name
-        private string m_origin;                        // Origin node's public name
-        private long m_evasiveAt;                       // Peer is being evasive
-        private long m_expiredAt;                       // Peer has expired by now
-        private bool m_connected;                       // Peer will send messages
-        private bool m_ready;                           // Peer has said Hello to us
-        private byte m_status;                          // Our status counter
-        private ushort m_sentSequence;                  // Outgoing message sequence
-        private ushort m_wantSequence;                  // Incoming message sequence
-        private Dictionary<string, string> m_headers;   // Peer headers 
+        private DealerSocket _mailbox;                 // Socket through to peer
+        private readonly Guid _uuid;                   // Identity guid, 16 bytes
+        private string _endpoint;                      // Endpoint connected to
+        private string _name;                          // Peer's public name
+        private string _origin;                        // Origin node's public name
+        private long _evasiveAt;                       // Peer is being evasive
+        private long _expiredAt;                       // Peer has expired by now
+        private bool _connected;                       // Peer will send messages
+        private bool _ready;                           // Peer has said Hello to us
+        private byte _status;                          // Our status counter
+        private ushort _sentSequence;                  // Outgoing message sequence
+        private ushort _wantSequence;                  // Incoming message sequence
+        private Dictionary<string, string> _headers;   // Peer headers 
         
         private ZrePeer(Guid uuid)
         {
-            m_uuid = uuid;
-            m_ready = false;
-            m_connected = false;
-            m_sentSequence = 0;
-            m_wantSequence = 0;
-            m_headers = new Dictionary<string, string>();
+            _uuid = uuid;
+            _ready = false;
+            _connected = false;
+            _sentSequence = 0;
+            _wantSequence = 0;
+            _headers = new Dictionary<string, string>();
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Destroy()
         {
-            Debug.Assert(m_mailbox != null, "Mailbox must not be null");
+            Debug.Assert(_mailbox != null, "Mailbox must not be null");
             Disconnect();
             Dispose();
         }
@@ -70,9 +70,9 @@ namespace NetMQ.Zyre
         /// <param name="endpoint"></param>
         public void Connect(Guid replyTo, string endpoint)
         {
-            Debug.Assert(!m_connected);
+            Debug.Assert(!_connected);
             //  Create new outgoing socket (drop any messages in transit)
-            m_mailbox = new DealerSocket(endpoint) // default action is to connect to the peer node
+            _mailbox = new DealerSocket(endpoint) // default action is to connect to the peer node
             {
                 Options =
                 {
@@ -90,9 +90,9 @@ namespace NetMQ.Zyre
                     // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses 
                 }
             };
-            m_endpoint = endpoint;
-            m_connected = true;
-            m_ready = false;
+            _endpoint = endpoint;
+            _connected = true;
+            _ready = false;
         }
 
         public static byte[] GetIdentity(Guid replyTo)
@@ -110,11 +110,11 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Disconnect()
         {
-            m_mailbox.Dispose();
-            m_mailbox = null;
-            m_endpoint = null;
-            m_connected = false;
-            m_ready = false;
+            _mailbox.Dispose();
+            _mailbox = null;
+            _endpoint = null;
+            _connected = false;
+            _ready = false;
         }
 
         /// <summary>
@@ -124,10 +124,10 @@ namespace NetMQ.Zyre
         /// <returns>always true</returns>
         public bool Send(ZreMsg msg)
         {
-            if (m_connected)
+            if (_connected)
             {
-                msg.Sequence = m_sentSequence++;
-                msg.Send(m_mailbox);
+                msg.Sequence = _sentSequence++;
+                msg.Send(_mailbox);
             }
             return true;
         }
@@ -137,7 +137,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public bool Connected
         {
-            get { return m_connected; }
+            get { return _connected; }
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public Guid Uuid
         {
-            get { return m_uuid; }
+            get { return _uuid; }
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public string Endpoint
         {
-            get { return m_endpoint; }
+            get { return _endpoint; }
         }
 
         /// <summary>
@@ -161,8 +161,8 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Refresh()
         {
-            m_evasiveAt = CurrentTimeMilliseconds() + PeerEvasive;
-            m_expiredAt = CurrentTimeMilliseconds() + PeerExpired;
+            _evasiveAt = CurrentTimeMilliseconds() + PeerEvasive;
+            _expiredAt = CurrentTimeMilliseconds() + PeerExpired;
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public long EvasiveAt
         {
-            get { return m_evasiveAt; }
+            get { return _evasiveAt; }
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public long ExpiredAt
         {
-            get { return m_expiredAt; }
+            get { return _expiredAt; }
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public string Name
         {
-            get { return m_name ?? ""; }
+            get { return _name ?? ""; }
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public byte Status
         {
-            get { return m_status; }
+            get { return _status; }
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void IncrementStatus()
         {
-            m_status = m_status == UbyteMax ? (byte)0 : m_status++;
+            _status = _status == UbyteMax ? (byte)0 : _status++;
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace NetMQ.Zyre
         /// <param name="name"></param>
         public void SetName(string name)
         {
-            m_name = name;
+            _name = name;
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace NetMQ.Zyre
         /// <param name="originNodeName"></param>
         public void SetOrigin(string originNodeName)
         {
-            m_origin = originNodeName;
+            _origin = originNodeName;
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace NetMQ.Zyre
         /// <param name="status"></param>
         public void SetStatus(byte status)
         {
-            m_status = status;
+            _status = status;
         }
 
         /// <summary>
@@ -248,7 +248,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public bool Ready
         {
-            get { return m_ready; }
+            get { return _ready; }
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace NetMQ.Zyre
         /// <param name="ready"></param>
         public void SetReady(bool ready)
         {
-            m_ready = ready;
+            _ready = ready;
         }
 
         /// <summary>
@@ -269,7 +269,7 @@ namespace NetMQ.Zyre
         public string Header(string key, string defaultValue)
         {
             string value;
-            if (!m_headers.TryGetValue(key, out value))
+            if (!_headers.TryGetValue(key, out value))
             {
                 return defaultValue;
             }
@@ -282,7 +282,7 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public Dictionary<string, string> GetHeaders()
         {
-            return m_headers;
+            return _headers;
         }
 
         /// <summary>
@@ -291,7 +291,7 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public void SetHeaders(Dictionary<string, string> headers)
         {
-            m_headers = headers;
+            _headers = headers;
         }
 
         /// <summary>
@@ -305,19 +305,19 @@ namespace NetMQ.Zyre
             if (msg.Id == ZreMsg.MessageId.Hello)
             {
                 //  HELLO always MUST have sequence = 1
-                m_wantSequence = 1;
+                _wantSequence = 1;
             }
             else
             {
-                m_wantSequence = m_wantSequence == UshortMax ? (ushort)0 : m_wantSequence++;
+                _wantSequence = _wantSequence == UshortMax ? (ushort)0 : _wantSequence++;
             }
-            return m_wantSequence != msg.Sequence;
+            return _wantSequence != msg.Sequence;
         }
 
         public override string ToString()
         {
-            var name = string.IsNullOrEmpty(m_name) ? "NotSet" : m_name;
-            return string.Format("name:{0} router endpoint:{1} connected:{2} ready:{3} status:{4}", name, m_endpoint, m_connected, m_ready, m_status);
+            var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
+            return string.Format("name:{0} router endpoint:{1} connected:{2} ready:{3} status:{4}", name, _endpoint, _connected, _ready, _status);
         }
 
         /// <summary>
@@ -338,10 +338,10 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            if (m_mailbox != null)
+            if (_mailbox != null)
             {
-                m_mailbox.Dispose();
-                m_mailbox = null;
+                _mailbox.Dispose();
+                _mailbox = null;
             }
         }
     }

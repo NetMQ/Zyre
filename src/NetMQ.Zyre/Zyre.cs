@@ -57,48 +57,48 @@ namespace NetMQ.Zyre
 
         /// <summary>
         /// A Zyre instance wraps the actor instance
-        /// All node control is done through m_actor
+        /// All node control is done through _actor
         /// </summary>
-        private NetMQActor m_actor;
+        private NetMQActor _actor;
 
         /// <summary>
         /// Receives incoming cluster traffic (traffic into Zyre from the network)
         /// </summary>
-        private PairSocket m_inbox;
+        private PairSocket _inbox;
 
         /// <summary>
         /// Copy of node UUID
         /// </summary>
-        private Guid m_uuid;
+        private Guid _uuid;
 
         /// <summary>
         /// Copy of node name
         /// </summary>
-        private string m_name;
+        private string _name;
 
         /// <summary>
         /// Copy of last endpoint bound to
         /// </summary>
-        private string m_endpoint;
+        private string _endpoint;
 
         public Zyre NewZyre(string name)
         {
             var zyre = new Zyre();
 
             // Create front-to-back pipe pair for data traffic
-            // outbox is passed to ZreNode for sending Zyre message traffic back to m_inbox
+            // outbox is passed to ZreNode for sending Zyre message traffic back to _inbox
             PairSocket outbox;
-            PairSocket.CreateSocketPair(out outbox, out m_inbox);
+            PairSocket.CreateSocketPair(out outbox, out _inbox);
 
             // Start node engine and wait for it to be ready
-            // All node control is done through m_actor
+            // All node control is done through _actor
             var shim = new ZreNode.Shim(outbox);
-            m_actor = NetMQActor.Create(shim);
+            _actor = NetMQActor.Create(shim);
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
             {
-                m_actor.SendMoreFrame("SET NAME").SendFrame(name);
+                _actor.SendMoreFrame("SET NAME").SendFrame(name);
             }
 
             return zyre;
@@ -112,11 +112,11 @@ namespace NetMQ.Zyre
             get
             {
                 // Hold uuid string in zyre object so caller gets a safe reference
-                m_actor.SendFrame("UUID");
-                var uuidBytes = m_actor.ReceiveFrameBytes();
+                _actor.SendFrame("UUID");
+                var uuidBytes = _actor.ReceiveFrameBytes();
                 Debug.Assert(uuidBytes.Length == 16);
-                m_uuid = new Guid(uuidBytes);
-                return m_uuid;
+                _uuid = new Guid(uuidBytes);
+                return _uuid;
             }
         }
 
@@ -126,7 +126,7 @@ namespace NetMQ.Zyre
         /// <param name="name">the name to set</param>
         public void SetName(string name)
         {
-            m_actor.SendMoreFrame("SET HEADER").SendFrame(name);
+            _actor.SendMoreFrame("SET HEADER").SendFrame(name);
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace NetMQ.Zyre
         public void SetHeader(string key, string format, params object[] args)
         {
             var value = string.Format(format, args);
-            m_actor.SendMoreFrame(key).SendFrame(value);
+            _actor.SendMoreFrame(key).SendFrame(value);
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace NetMQ.Zyre
         /// <param name="port">the UDP beacon discovery port override</param>
         public void SetPort(int port)
         {
-            m_actor.SendMoreFrame("SET PORT").SendFrame(port.ToString());
+            _actor.SendMoreFrame("SET PORT").SendFrame(port.ToString());
         }
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace NetMQ.Zyre
         /// <param name="interval">beacon discovery interval</param>
         public void SetInterval(TimeSpan interval)
         {
-            m_actor.SendMoreFrame("SET INTERVAL").SendFrame(interval.ToString());
+            _actor.SendMoreFrame("SET INTERVAL").SendFrame(interval.ToString());
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Start()
         {
-            m_actor.SendFrame("START");
+            _actor.SendFrame("START");
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Stop()
         {
-            m_actor.SendFrame("STOP");
+            _actor.SendFrame("STOP");
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace NetMQ.Zyre
         /// <param name="groupName">the name of the group</param>
         public void Join(string groupName)
         {
-            m_actor.SendMoreFrame("JOIN").SendFrame(groupName);
+            _actor.SendMoreFrame("JOIN").SendFrame(groupName);
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace NetMQ.Zyre
         /// <param name="groupName">the name of the group</param>
         public void Leave(string groupName)
         {
-            m_actor.SendMoreFrame("LEAVE").SendFrame(groupName);
+            _actor.SendMoreFrame("LEAVE").SendFrame(groupName);
         }
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace NetMQ.Zyre
         /// <returns>message</returns>
         public NetMQMessage Recv()
         {
-            return m_inbox.ReceiveMultipartMessage();
+            return _inbox.ReceiveMultipartMessage();
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace NetMQ.Zyre
         /// <param name="message">the message</param>
         public void Whisper(Guid peer, NetMQMessage message)
         {
-            m_actor.SendMoreFrame("WHISPER").SendMoreFrame(peer.ToByteArray()).SendMultipartMessage(message);
+            _actor.SendMoreFrame("WHISPER").SendMoreFrame(peer.ToByteArray()).SendMultipartMessage(message);
         }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace NetMQ.Zyre
         /// <param name="message"></param>
         public void Shout(string groupName, NetMQMessage message)
         {
-            m_actor.SendMoreFrame("SHOUT").SendMoreFrame(groupName).SendMultipartMessage(message);
+            _actor.SendMoreFrame("SHOUT").SendMoreFrame(groupName).SendMultipartMessage(message);
         }
 
         /// <summary>
@@ -253,7 +253,7 @@ namespace NetMQ.Zyre
         public void Whispers(Guid peer, string format, params object[] args)
         {
             var value = string.Format(format, args);
-            m_actor.SendMoreFrame("WHISPER").SendMoreFrame(peer.ToByteArray()).SendFrame(value);
+            _actor.SendMoreFrame("WHISPER").SendMoreFrame(peer.ToByteArray()).SendFrame(value);
         }
 
         /// <summary>
@@ -265,7 +265,7 @@ namespace NetMQ.Zyre
         public void Shouts(string groupName, string format, params object[] args)
         {
             var value = string.Format(format, args);
-            m_actor.SendMoreFrame("WHISPER").SendMoreFrame(groupName).SendFrame(value);
+            _actor.SendMoreFrame("WHISPER").SendMoreFrame(groupName).SendFrame(value);
         }
 
         /// <summary>
@@ -274,8 +274,8 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public List<Guid> Peers()
         {
-            m_actor.SendFrame("PEERS");
-            var peersBuffer = m_actor.ReceiveFrameBytes();
+            _actor.SendFrame("PEERS");
+            var peersBuffer = _actor.ReceiveFrameBytes();
             var peers = Serialization.BinaryDeserialize<List<Guid>>(peersBuffer);
             return peers;
         }
@@ -287,9 +287,9 @@ namespace NetMQ.Zyre
         /// <returns>the endpoint of a connected peer</returns>
         public string PeerAddress(Guid peer)
         {
-            m_actor.SendMoreFrame("PEER ENDPOINT");
-            m_actor.SendFrame(peer.ToByteArray());
-            return m_actor.ReceiveFrameString();
+            _actor.SendMoreFrame("PEER ENDPOINT");
+            _actor.SendFrame(peer.ToByteArray());
+            return _actor.ReceiveFrameString();
         }
 
         /// <summary>
@@ -301,10 +301,10 @@ namespace NetMQ.Zyre
         /// <returns>the value of a header of a connected peer, or String.Empty if peer or key doesn't exist</returns>
         public string PeerHeaderValue(Guid peer, string key)
         {
-            m_actor.SendMoreFrame("PEER HEADER");
-            m_actor.SendMoreFrame(peer.ToByteArray());
-            m_actor.SendFrame(key);
-            return m_actor.ReceiveFrameString();
+            _actor.SendMoreFrame("PEER HEADER");
+            _actor.SendMoreFrame(peer.ToByteArray());
+            _actor.SendFrame(key);
+            return _actor.ReceiveFrameString();
         }
 
         /// <summary>
@@ -313,8 +313,8 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public List<string> OwnGroups()
         {
-            m_actor.SendMoreFrame("OWN GROUPS");
-            var result = Serialization.BinaryDeserialize<List<string>>(m_actor.ReceiveFrameBytes());
+            _actor.SendMoreFrame("OWN GROUPS");
+            var result = Serialization.BinaryDeserialize<List<string>>(_actor.ReceiveFrameBytes());
             return result;
         }
 
@@ -324,15 +324,15 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public List<string> PeerGroups()
         {
-            m_actor.SendMoreFrame("PEER GROUPS");
-            var result = Serialization.BinaryDeserialize<List<string>>(m_actor.ReceiveFrameBytes());
+            _actor.SendMoreFrame("PEER GROUPS");
+            var result = Serialization.BinaryDeserialize<List<string>>(_actor.ReceiveFrameBytes());
             return result;
         }
 
         /// <summary>
         /// Return the node socket, for direct polling of the socket
         /// </summary>
-        public PairSocket Socket { get { return m_inbox; } }
+        public PairSocket Socket { get { return _inbox; } }
 
         /// <summary>
         /// Return the Zyre version for run-time API detection
@@ -358,7 +358,7 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            return string.Format("name:{0} endpoint:{1}", m_name, m_endpoint);
+            return string.Format("name:{0} endpoint:{1}", _name, _endpoint);
         }
 
         /// <summary>
@@ -379,15 +379,15 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            if (m_actor != null)
+            if (_actor != null)
             {
-                m_actor.Dispose();
-                m_actor = null;
+                _actor.Dispose();
+                _actor = null;
             }
-            if (m_inbox != null)
+            if (_inbox != null)
             {
-                m_inbox.Dispose();
-                m_inbox = null;
+                _inbox.Dispose();
+                _inbox = null;
             }
         }
     }

@@ -722,9 +722,9 @@ namespace NetMQ.Zyre
         #endregion
 
 
-        private byte[] m_buffer; //  Read/write buffer for serialization    
-        private int m_offset;
-        private byte[] m_routingId;
+        private byte[] _buffer; //  Read/write buffer for serialization    
+        private int _offset;
+        private byte[] _routingId;
 
         /// <summary>
         /// Create a new ZreMsg
@@ -759,17 +759,17 @@ namespace NetMQ.Zyre
         /// </summary>
         public byte[] RoutingId
         {
-            get { return m_routingId; }
+            get { return _routingId; }
             set
             {
                 if (value == null)
-                    m_routingId = null;
+                    _routingId = null;
                 else
                 {
-                    if (m_routingId == null || m_routingId.Length != value.Length)
-                        m_routingId = new byte[value.Length];
+                    if (_routingId == null || _routingId.Length != value.Length)
+                        _routingId = new byte[value.Length];
 
-                    Buffer.BlockCopy(value, 0, m_routingId, 0, value.Length);
+                    Buffer.BlockCopy(value, 0, _routingId, 0, value.Length);
                 }
             }
         }
@@ -887,10 +887,10 @@ namespace NetMQ.Zyre
                         throw new MessageException("No routing id");
                     }
 
-                    if (m_routingId == null || m_routingId.Length == routingIdMsg.Size)
-                        m_routingId = new byte[routingIdMsg.Size];
+                    if (_routingId == null || _routingId.Length == routingIdMsg.Size)
+                        _routingId = new byte[routingIdMsg.Size];
 
-                    Buffer.BlockCopy(routingIdMsg.Data, 0, m_routingId, 0, m_routingId.Length);
+                    Buffer.BlockCopy(routingIdMsg.Data, 0, _routingId, 0, _routingId.Length);
                 }
                 finally
                 {
@@ -908,8 +908,8 @@ namespace NetMQ.Zyre
             {
                 input.Receive(ref msg);
 
-                m_offset = 0;
-                m_buffer = msg.Data;
+                _offset = 0;
+                _buffer = msg.Data;
 
                 UInt16 signature = GetNumber2();
 
@@ -962,7 +962,7 @@ namespace NetMQ.Zyre
             }
             finally
             {
-                m_buffer = null;
+                _buffer = null;
                 msg.Close();
             }
             return true;
@@ -1011,8 +1011,8 @@ namespace NetMQ.Zyre
 
             try
             {
-                m_offset = 0;
-                m_buffer = msg.Data;
+                _offset = 0;
+                _buffer = msg.Data;
 
                 // put signature
                 PutNumber2(0xAAA0 | 1);
@@ -1072,7 +1072,7 @@ namespace NetMQ.Zyre
             }
             finally
             {
-                m_buffer = null;
+                _buffer = null;
                 msg.Close();
             }
         }
@@ -1251,75 +1251,75 @@ namespace NetMQ.Zyre
         //  Put a block of octets to the frame
         private void PutOctets(byte[] host, int size)
         {
-            Buffer.BlockCopy(host, 0, m_buffer, m_offset, size);
-            m_offset += size;
+            Buffer.BlockCopy(host, 0, _buffer, _offset, size);
+            _offset += size;
         }
 
         //  Get a block of octets from the frame
         private void GetOctets(byte[] host, int size)
         {
-            if (m_offset + size > m_buffer.Length)
+            if (_offset + size > _buffer.Length)
             {
                 throw new MessageException("Malformed message");
             }
 
-            Buffer.BlockCopy(m_buffer, m_offset, host, 0, size);
-            m_offset += size;
+            Buffer.BlockCopy(_buffer, _offset, host, 0, size);
+            _offset += size;
         }
 
         //  Put a 1-byte number to the frame
         private void PutNumber1(byte host)
         {
-            m_buffer[m_offset] = host;
-            m_offset++;
+            _buffer[_offset] = host;
+            _offset++;
         }
 
         //  Put a 2-byte number to the frame
         private void PutNumber2(UInt16 host)
         {
-            m_buffer[m_offset] = (byte) (((host) >> 8) & 255);
-            m_buffer[m_offset + 1] = (byte) (((host)) & 255);
+            _buffer[_offset] = (byte) (((host) >> 8) & 255);
+            _buffer[_offset + 1] = (byte) (((host)) & 255);
 
-            m_offset += 2;
+            _offset += 2;
         }
 
         //  Put a 4-byte number to the frame
         private void PutNumber4(UInt32 host)
         {
-            m_buffer[m_offset] = (byte) (((host) >> 24) & 255);
-            m_buffer[m_offset + 1] = (byte) (((host) >> 16) & 255);
-            m_buffer[m_offset + 2] = (byte) (((host) >> 8) & 255);
-            m_buffer[m_offset + 3] = (byte) (((host)) & 255);
+            _buffer[_offset] = (byte) (((host) >> 24) & 255);
+            _buffer[_offset + 1] = (byte) (((host) >> 16) & 255);
+            _buffer[_offset + 2] = (byte) (((host) >> 8) & 255);
+            _buffer[_offset + 3] = (byte) (((host)) & 255);
 
-            m_offset += 4;
+            _offset += 4;
         }
 
         //  Put a 8-byte number to the frame
         private void PutNumber8(UInt64 host)
         {
-            m_buffer[m_offset] = (byte) (((host) >> 56) & 255);
-            m_buffer[m_offset + 1] = (byte) (((host) >> 48) & 255);
-            m_buffer[m_offset + 2] = (byte) (((host) >> 40) & 255);
-            m_buffer[m_offset + 3] = (byte) (((host) >> 32) & 255);
-            m_buffer[m_offset + 4] = (byte) (((host) >> 24) & 255);
-            m_buffer[m_offset + 5] = (byte) (((host) >> 16) & 255);
-            m_buffer[m_offset + 6] = (byte) (((host) >> 8) & 255);
-            m_buffer[m_offset + 7] = (byte) (((host)) & 255);
+            _buffer[_offset] = (byte) (((host) >> 56) & 255);
+            _buffer[_offset + 1] = (byte) (((host) >> 48) & 255);
+            _buffer[_offset + 2] = (byte) (((host) >> 40) & 255);
+            _buffer[_offset + 3] = (byte) (((host) >> 32) & 255);
+            _buffer[_offset + 4] = (byte) (((host) >> 24) & 255);
+            _buffer[_offset + 5] = (byte) (((host) >> 16) & 255);
+            _buffer[_offset + 6] = (byte) (((host) >> 8) & 255);
+            _buffer[_offset + 7] = (byte) (((host)) & 255);
 
-            m_offset += 8;
+            _offset += 8;
         }
 
         //  Get a 1-byte number from the frame
         private byte GetNumber1()
         {
-            if (m_offset + 1 > m_buffer.Length)
+            if (_offset + 1 > _buffer.Length)
             {
                 throw new MessageException("Malformed message.");
             }
 
-            byte b = m_buffer[m_offset];
+            byte b = _buffer[_offset];
 
-            m_offset++;
+            _offset++;
 
             return b;
         }
@@ -1327,14 +1327,14 @@ namespace NetMQ.Zyre
         //  Get a 2-byte number from the frame
         private UInt16 GetNumber2()
         {
-            if (m_offset + 2 > m_buffer.Length)
+            if (_offset + 2 > _buffer.Length)
             {
                 throw new MessageException("Malformed message.");
             }
 
-            UInt16 number = (UInt16) ((m_buffer[m_offset] << 8) + m_buffer[m_offset + 1]);
+            UInt16 number = (UInt16) ((_buffer[_offset] << 8) + _buffer[_offset + 1]);
 
-            m_offset += 2;
+            _offset += 2;
 
             return number;
         }
@@ -1342,15 +1342,15 @@ namespace NetMQ.Zyre
         //  Get a 4-byte number from the frame
         private UInt32 GetNumber4()
         {
-            if (m_offset + 4 > m_buffer.Length)
+            if (_offset + 4 > _buffer.Length)
             {
                 throw new MessageException("Malformed message.");
             }
 
-            UInt32 number = (((UInt32) m_buffer[m_offset]) << 24) + (((UInt32) m_buffer[m_offset + 1]) << 16) + (((UInt32) m_buffer[m_offset + 2]) << 8) +
-                            (UInt32) m_buffer[m_offset + 3];
+            UInt32 number = (((UInt32) _buffer[_offset]) << 24) + (((UInt32) _buffer[_offset + 1]) << 16) + (((UInt32) _buffer[_offset + 2]) << 8) +
+                            (UInt32) _buffer[_offset + 3];
 
-            m_offset += 4;
+            _offset += 4;
 
             return number;
         }
@@ -1358,16 +1358,16 @@ namespace NetMQ.Zyre
         //  Get a 8byte number from the frame
         private UInt64 GetNumber8()
         {
-            if (m_offset + 8 > m_buffer.Length)
+            if (_offset + 8 > _buffer.Length)
             {
                 throw new MessageException("Malformed message.");
             }
 
-            UInt64 number = (((UInt64) m_buffer[m_offset]) << 56) + (((UInt64) m_buffer[m_offset + 1]) << 48) + (((UInt64) m_buffer[m_offset + 2]) << 40) +
-                            (((UInt64) m_buffer[m_offset + 3]) << 32) + (((UInt64) m_buffer[m_offset + 4]) << 24) + (((UInt64) m_buffer[m_offset + 5]) << 16) +
-                            (((UInt64) m_buffer[m_offset + 6]) << 8) + (UInt64) m_buffer[m_offset + 7];
+            UInt64 number = (((UInt64) _buffer[_offset]) << 56) + (((UInt64) _buffer[_offset + 1]) << 48) + (((UInt64) _buffer[_offset + 2]) << 40) +
+                            (((UInt64) _buffer[_offset + 3]) << 32) + (((UInt64) _buffer[_offset + 4]) << 24) + (((UInt64) _buffer[_offset + 5]) << 16) +
+                            (((UInt64) _buffer[_offset + 6]) << 8) + (UInt64) _buffer[_offset + 7];
 
-            m_offset += 8;
+            _offset += 8;
 
             return number;
         }
@@ -1382,23 +1382,23 @@ namespace NetMQ.Zyre
 
             PutNumber1((byte) length);
 
-            Encoding.UTF8.GetBytes(host, 0, length, m_buffer, m_offset);
+            Encoding.UTF8.GetBytes(host, 0, length, _buffer, _offset);
 
-            m_offset += length;
+            _offset += length;
         }
 
         //  Get a string from the frame
         private string GetString()
         {
             int length = GetNumber1();
-            if (m_offset + length > m_buffer.Length)
+            if (_offset + length > _buffer.Length)
             {
                 throw new MessageException("Malformed message.");
             }
 
-            string s = Encoding.UTF8.GetString(m_buffer, m_offset, length);
+            string s = Encoding.UTF8.GetString(_buffer, _offset, length);
 
-            m_offset += length;
+            _offset += length;
 
             return s;
         }
@@ -1408,23 +1408,23 @@ namespace NetMQ.Zyre
         {
             PutNumber4((UInt32) Encoding.UTF8.GetByteCount(host));
 
-            Encoding.UTF8.GetBytes(host, 0, host.Length, m_buffer, m_offset);
+            Encoding.UTF8.GetBytes(host, 0, host.Length, _buffer, _offset);
 
-            m_offset += host.Length;
+            _offset += host.Length;
         }
 
         //  Get a long string from the frame
         private string GetLongString()
         {
             int length = (int) GetNumber4();
-            if (m_offset + length > m_buffer.Length)
+            if (_offset + length > _buffer.Length)
             {
                 throw new MessageException("Malformed message.");
             }
 
-            string s = Encoding.UTF8.GetString(m_buffer, m_offset, length);
+            string s = Encoding.UTF8.GetString(_buffer, _offset, length);
 
-            m_offset += length;
+            _offset += length;
 
             return s;
         }

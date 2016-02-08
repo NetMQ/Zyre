@@ -8,13 +8,13 @@ namespace NetMQ.Zyre
 {
     public class ZreGroup : IDisposable
     {
-        private readonly string m_name;
-        private readonly Dictionary<Guid, ZrePeer> m_peers;
+        private readonly string _name;
+        private readonly Dictionary<Guid, ZrePeer> _peers;
 
         public ZreGroup(string name)
         {
-            m_name = name;
-            m_peers = new Dictionary<Guid, ZrePeer>();
+            _name = name;
+            _peers = new Dictionary<Guid, ZrePeer>();
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace NetMQ.Zyre
         /// <param name="peer"></param>
         public void Join(ZrePeer peer)
         {
-            m_peers[peer.Uuid] = peer;
+            _peers[peer.Uuid] = peer;
             peer.IncrementStatus();
         }
 
@@ -55,7 +55,7 @@ namespace NetMQ.Zyre
         /// <param name="peer"></param>
         public void Leave(ZrePeer peer)
         {
-            m_peers.Remove(peer.Uuid);
+            _peers.Remove(peer.Uuid);
             peer.IncrementStatus();
         }
 
@@ -65,7 +65,7 @@ namespace NetMQ.Zyre
         /// <param name="msg"></param>
         public void Send(ZreMsg msg)
         {
-            foreach (var peer in m_peers.Values)
+            foreach (var peer in _peers.Values)
             {
                 peer.Send(msg);
             }
@@ -73,7 +73,7 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            return m_name;
+            return _name;
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            foreach (var peer in m_peers.Values)
+            foreach (var peer in _peers.Values)
             {
                 peer.Dispose();
             }
