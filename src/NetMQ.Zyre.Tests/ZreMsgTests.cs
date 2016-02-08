@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
-using NetMQ;
 using NetMQ.Sockets;
 
 namespace NetMQ.Zyre.Tests

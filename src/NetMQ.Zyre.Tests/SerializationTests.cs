@@ -1,9 +1,6 @@
 ﻿using NUnit.Framework;
-using NetMQ.Zyre;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FluentAssertions;
 
 namespace NetMQ.Zyre.Tests
