@@ -481,15 +481,8 @@ namespace NetMQ.Zyre
                     var ownGroupsKeyBuffer = Serialization.BinarySerialize(_ownGroups.Keys.ToList());
                     _pipe.SendFrame(ownGroupsKeyBuffer);
                     break;
-                case "endPipe":
-                case "$TERM":
+                case NetMQActor.EndShimMessage:
                     _terminated = true;
-                    if (_beacon != null)
-                    {
-                        _beacon.Unsubscribe();
-                        _beacon.Dispose();
-                        _beacon = null;
-                    }
                     if (_poller != null)
                     {
                         _poller.Stop();
