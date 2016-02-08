@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using NetMQ.Sockets;
 
@@ -109,24 +110,25 @@ namespace NetMQ.Zyre
         /// </summary>
         private readonly NetMQActor _actor;
 
-        //  Beacon frame has this format:
-        //
-        //  Z R E       3 bytes
-        //  version     1 byte, %x01
-        //  UUID        16 bytes
-        //  port        2 bytes in network order
-
-        //public static NetMQActor GetActor()
-        //{
-        //    return NetMQActor.Create(Run); 
-        //}
+        /// <summary>
+        /// True when Start() has finished, False when Stop() has finished.
+        /// </summary>
+        public bool IsRunning { get; private set; }
 
         /// <summary>
-        /// Constructor
+        /// Create a new node and return the actor that controls it.
+        /// All node control is done through _actor.
+        /// outbox is passed to ZreNode for sending Zyre message traffic back to caller.
         /// </summary>
-        /// <param name="pipe"></param>
         /// <param name="outbox"></param>
-        public ZreNode(PairSocket pipe, PairSocket outbox)
+        /// <returns></returns>
+        public static NetMQActor Create(PairSocket outbox)
+        {
+            var node = new ZreNode(outbox);
+            return node._actor;
+        }
+
+        private ZreNode(PairSocket outbox)
         {
             _inbox = new RouterSocket();
 
@@ -136,9 +138,7 @@ namespace NetMQ.Zyre
             // NOTE: This RouterHandover option apparently doesn't exist in NetMQ 
             //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
 
-            _pipe = pipe;
             _outbox = outbox;
-            _poller = new NetMQPoller {_pipe};
             //_beaconPort = ZreDiscoveryPort;
             _interval = TimeSpan.Zero; // Use default
             _uuid = Guid.NewGuid();
@@ -150,6 +150,8 @@ namespace NetMQ.Zyre
             //  Default name for node is first 6 characters of UUID:
             //  the shorter string is more readable in logs
             _name = _uuid.ToString().ToUpper().Substring(0, 6);
+
+            _actor = NetMQActor.Create(RunActor);
         }
 
         /// <summary>
@@ -158,13 +160,29 @@ namespace NetMQ.Zyre
         /// <returns>true if OK, false if not possible</returns>
         public bool Start()
         {
+            if (IsRunning)
+            {
+                throw new InvalidOperationException("ZreNode is already running");
+            }
             Debug.Assert(_beacon == null);
             _beacon = new NetMQBeacon();
+
             _beacon.Configure(ZreDiscoveryPort);
-            var hostIp = "TODO"; // _beacon.BoundTo;
+
+            // listen to incoming beacons
+            _beacon.ReceiveReady += OnBeaconReady;
+
+
+            IPAddress bindTo = null; // TODO change this once this property comes thru from NuGet = _beacon.BoundTo;
+            var interfaceCollection = new InterfaceCollection();
+            foreach (var @interface in interfaceCollection)
+            {
+                    bindTo = @interface.Address;
+                    break;
+            }
 
             // Bind our router port to the host
-            var address = string.Format("tcp://{0}", hostIp);
+            var address = string.Format("tcp://{0}", bindTo);
             _port = _inbox.BindRandomPort(address);
             if (_port <= 0)
             {
@@ -177,12 +195,24 @@ namespace NetMQ.Zyre
             PublishBeacon(_port);
             _beacon.Subscribe("ZRE");
             _poller.Add(_beacon);
-            // TODO: I'm not sure I need to do this, because NetMQBeacon does internal polling and has internal actor. Just hook to beacon ReceiveReady event?
 
             // Start polling on inbox
+            _inbox.ReceiveReady += OnInboxReady;
             _poller.Add(_inbox);
+            IsRunning = true;
             return true;
         }
+
+        private void OnInboxReady(object sender, NetMQSocketEventArgs e)
+        {
+            ReceivePeer();
+        }
+
+        private void OnBeaconReady(object sender, NetMQBeaconEventArgs e)
+        {
+            ReceiveBeacon();
+        }
+
 
         /// <summary>
         /// Stop node discovery and interconnection
@@ -190,12 +220,19 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public bool Stop()
         {
+            if (!IsRunning)
+            {
+                throw new InvalidOperationException("ZreNode is not running");
+            }
             // Stop broadcast/listen beacon
             PublishBeacon(0);
             Thread.Sleep(1); // Allow 1 msec for beacon to go out
+            _beacon.ReceiveReady -= OnBeaconReady;
             _poller.Remove(_beacon);
+            _beacon = null;
 
             // Stop polling on inbox
+            _inbox.ReceiveReady -= OnInboxReady;
             _poller.Remove(_inbox);
 
             // Tell the application we are stopping
@@ -204,6 +241,35 @@ namespace NetMQ.Zyre
             msg.Append(_uuid.ToString());
             msg.Append(_name);
             _outbox.TrySendMultipartMessage(TimeSpan.Zero, msg);
+            IsRunning = false;
+            return true;
+        }
+
+        /// <summary>
+        /// Given a ZRE beacon header, return 
+        /// </summary>
+        /// <param name="bytes">the ZRE 22-byte beacon header</param>
+        /// <param name="uuid">The peer's identity</param>
+        /// <param name="port">The peer's port</param>
+        /// <returns></returns>
+        private bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
+        {
+            uuid = Guid.Empty;
+            port = int.MinValue;
+            if (bytes.Length != 22)
+            {
+                return false;
+            }
+            if (bytes[0] != Convert.ToByte('Z') || bytes[1] != Convert.ToByte('R') || bytes[2] != Convert.ToByte('E') || bytes[3] != BeaconVersion)
+            {
+                return false;
+            }
+            var uuidBytes = new byte[16];
+            Buffer.BlockCopy(bytes, 4, uuidBytes, 0, 16);
+            uuid = new Guid(bytes);
+            var portBytes = new byte[2];
+            Buffer.BlockCopy(bytes, 20, portBytes, 0, 2);
+            port = NetworkOrderBitsConverter.ToInt16(portBytes);
             return true;
         }
 
@@ -260,6 +326,11 @@ namespace NetMQ.Zyre
             {
                 SendMessageToPeer(peer, msg);
             }
+        }
+
+        private void OnPipeReceiveReady(object sender, NetMQSocketEventArgs e)
+        {
+            ReceiveApi();
         }
 
         /// <summary>
@@ -697,6 +768,39 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
+        /// Handle beacon data
+        /// </summary>
+        public void ReceiveBeacon()
+        {
+            // Get IP address and beacon of peer
+            string peerName;
+            var bytes = _beacon.Receive(out peerName);
+
+            // Ignore anything that isn't a valid beacon
+            int port;
+            Guid uuid;
+            if (!IsValidBeacon(bytes, out uuid, out port))
+            {
+                return;
+            }
+            ZrePeer peer;
+            if (port > 0)
+            {
+                var endPoint = string.Format("tcp://{0}:{1}", peerName, port);
+                peer = RequirePeer(uuid, endPoint);
+                peer.Refresh();
+            }
+            else
+            {
+                // Zero port means peer is going away; remove it if we had any knowledge of it already
+                if (_peers.TryGetValue(uuid, out peer))
+                {
+                    RemovePeer(peer);
+                }
+            }
+        }
+
+        /// <summary>
         /// We do this once a second:
         /// - if peer has gone quiet, send TCP ping and emit EVASIVE event
         /// - if peer has disappeared, expire it
@@ -793,56 +897,32 @@ namespace NetMQ.Zyre
             }
         }
 
-        public class Shim : IShimHandler
+        /// <summary>
+        /// This method is being run asynchronously by m_actor.
+        /// </summary>
+        /// <param name="shim"></param>
+        private void RunActor(PairSocket shim)
         {
-            private readonly PairSocket _outbox;
+            _pipe = shim;
+            _pipe.ReceiveReady += OnPipeReceiveReady;
 
-            public Shim(PairSocket outbox)
-            {
-                _outbox = outbox;
-            }
+            var reapTimer = new NetMQTimer(TimeSpan.FromMilliseconds(1000));
+            reapTimer.Elapsed += OnReapTimerElapsed;
 
-            private const int ReapInterval = 1000; // 1 second
+            // Start poller, but poll only the _pipe. Start() and Stop() will add/remove other items to poll
+            _poller = new NetMQPoller { _pipe, reapTimer };
 
-            /// <summary>
-            /// This is the actor that runs a single node; it uses one thread, creates
-            /// a ZreNode at start and destroys that when finishing.
-            /// </summary>
-            /// <param name="pipe">Pipe back to application</param>
-            public void Run(PairSocket pipe)
-            {
-                using (var node = new ZreNode(pipe, _outbox))
-                {
-                    //  Signal actor successfully initialized
-                    pipe.SignalOK();
+            // Signal the actor that we're ready to work
+            _pipe.SignalOK();
 
-                    // Loop until the agent is terminated one way or another
-                    var reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-                    while (!node._terminated)
-                    {
-                        var timeout = reapAt - ZrePeer.CurrentTimeMilliseconds();
-                        if (timeout > ReapInterval)
-                        {
-                            timeout = ReapInterval;
-                        }
-                        else if (timeout < 0)
-                        {
-                            timeout = 0;
-                        }
+            // polling until cancelled
+            _poller.Run();            
+        }
 
-                        if (ZrePeer.CurrentTimeMilliseconds() > reapAt)
-                        {
-                            reapAt = ZrePeer.CurrentTimeMilliseconds() + ReapInterval;
-                            node.PingAllPeers();
-                        }
-
-                        // TODO stuff from zyre.c
-                        //var tmp = node._poller.IsRunning;
-                        //node.ReceivePeer();
-
-                    }
-                }
-            }
+        private void OnReapTimerElapsed(object sender, NetMQTimerEventArgs e)
+        {
+            // Ping all peers and reap any expired ones
+            PingAllPeers();
         }
     }
 

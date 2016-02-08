@@ -88,8 +88,7 @@ namespace NetMQ.Zyre
 
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
-            var shim = new ZreNode.Shim(outbox);
-            _actor = NetMQActor.Create(shim);
+            _actor = ZreNode.Create(outbox);
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
