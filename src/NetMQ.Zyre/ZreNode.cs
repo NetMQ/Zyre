@@ -252,7 +252,7 @@ namespace NetMQ.Zyre
         /// <param name="uuid">The peer's identity</param>
         /// <param name="port">The peer's port</param>
         /// <returns></returns>
-        private bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
+        private static bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
         {
             uuid = Guid.Empty;
             port = int.MinValue;
@@ -749,6 +749,7 @@ namespace NetMQ.Zyre
                         outMsg.Append(msg.Shout.Content[i]);
                     }
                     _outbox.SendMultipartMessage(outMsg);
+                    // TODO: DO this like Whisper above?
                     break;
                 case ZreMsg.MessageId.Join:
                     JoinPeerGroup(peer, msg.Join.Group);

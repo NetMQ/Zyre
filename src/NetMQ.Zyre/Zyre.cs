@@ -216,7 +216,7 @@ namespace NetMQ.Zyre
         /// message (ENTER, EXIT, JOIN, LEAVE) or data (WHISPER, SHOUT).
         /// </summary>
         /// <returns>message</returns>
-        public NetMQMessage Recv()
+        public NetMQMessage Receive()
         {
             return _inbox.ReceiveMultipartMessage();
         }
@@ -329,7 +329,13 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return the node socket, for direct polling of the socket
         /// </summary>
-        public PairSocket Socket { get { return _inbox; } }
+        public PairSocket Socket
+        {
+            get
+            {
+                return _inbox;
+            }
+        }
 
         /// <summary>
         /// Return the Zyre version for run-time API detection
