@@ -15,23 +15,26 @@ namespace NetMQ.Zyre
         private const ushort UshortMax = ushort.MaxValue;
         private const byte UbyteMax = byte.MaxValue;
 
-        private DealerSocket _mailbox;                 // Socket through to peer
-        private readonly Guid _uuid;                   // Identity guid, 16 bytes
-        private string _endpoint;                      // Endpoint connected to
-        private string _name;                          // Peer's public name
-        private string _origin;                        // Origin node's public name
-        private long _evasiveAt;                       // Peer is being evasive
-        private long _expiredAt;                       // Peer has expired by now
-        private bool _connected;                       // Peer will send messages
-        private bool _ready;                           // Peer has said Hello to us
-        private byte _status;                          // Our status counter
-        private ushort _sentSequence;                  // Outgoing message sequence
-        private ushort _wantSequence;                  // Incoming message sequence
-        private Dictionary<string, string> _headers;   // Peer headers 
+        private DealerSocket _mailbox;                  // Socket through to peer
+        private readonly Guid _uuid;                    // Identity guid, 16 bytes
+        private string _endpoint;                       // Endpoint connected to
+        private string _name;                           // Peer's public name
+        private string _origin;                         // Origin node's public name
+        private long _evasiveAt;                        // Peer is being evasive
+        private long _expiredAt;                        // Peer has expired by now
+        private bool _connected;                        // Peer will send messages
+        private bool _ready;                            // Peer has said Hello to us
+        private byte _status;                           // Our status counter
+        private ushort _sentSequence;                   // Outgoing message sequence
+        private ushort _wantSequence;                   // Incoming message sequence
+        private Dictionary<string, string> _headers;    // Peer headers 
+        private bool _verbose;                          // Do we log traffic and failures? 
+        private Action<string> _verboseAction;          // The action to take when _verbose
         
-        private ZrePeer(Guid uuid)
+        private ZrePeer(Guid uuid, Action<string> verboseAction = null)
         {
             _uuid = uuid;
+            _verboseAction = verboseAction;
             _ready = false;
             _connected = false;
             _sentSequence = 0;
@@ -44,10 +47,11 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="container">The dictionary of peers</param>
         /// <param name="guid">The identity for this peer</param>
+        /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        public static ZrePeer NewPeer(Dictionary<Guid, ZrePeer> container, Guid guid)
+        public static ZrePeer NewPeer(Dictionary<Guid, ZrePeer> container, Guid guid, Action<string> verboseAction = null)
         {
-            var peer = new ZrePeer(guid);
+            var peer = new ZrePeer(guid, verboseAction);
             container[guid] = peer; // overwrite any existing entry for same uuid
             return peer;
         }
@@ -90,6 +94,10 @@ namespace NetMQ.Zyre
                     // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses 
                 }
             };
+            if (_verbose)
+            {
+                _verboseAction(string.Format("({0}) connect to peer: {1}", _origin, _endpoint));
+            }
             _endpoint = endpoint;
             _connected = true;
             _ready = false;
@@ -126,7 +134,11 @@ namespace NetMQ.Zyre
         {
             if (_connected)
             {
-                msg.Sequence = _sentSequence++;
+                msg.Sequence = ++_sentSequence;
+                if (_verbose)
+                {
+                    _verboseAction(string.Format("({0}) send {1} to peer={2} sequence={3}", _origin, msg.Command, _name, _sentSequence));
+                }
                 msg.Send(_mailbox);
             }
             return true;
@@ -226,7 +238,7 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Set Origin node's public name
+        /// Set current node name, for logging
         /// </summary>
         /// <param name="originNodeName"></param>
         public void SetOrigin(string originNodeName)
@@ -302,6 +314,13 @@ namespace NetMQ.Zyre
         public bool MessagesLost(ZreMsg msg)
         {
             Debug.Assert(msg != null);
+
+            //  The sequence number set by the peer, and our own calculated
+            //  sequence number should be the same.
+            if (_verbose)
+            {
+                _verboseAction(string.Format("({0}) recv {1} from peer={2} sequence={3}", _origin, msg.Command, _name, msg.Sequence));
+            }
             if (msg.Id == ZreMsg.MessageId.Hello)
             {
                 //  HELLO always MUST have sequence = 1
@@ -311,7 +330,24 @@ namespace NetMQ.Zyre
             {
                 _wantSequence = _wantSequence == UshortMax ? (ushort)0 : _wantSequence++;
             }
+            if (_wantSequence != msg.Sequence)
+            {
+                if (_verboseAction != null)
+                {
+                    _verboseAction(string.Format("({0}) seq error from peer={1} expect={2}, got={3}", _origin, _name, _wantSequence, msg.Sequence));
+                }
+            }
             return _wantSequence != msg.Sequence;
+        }
+
+        /// <summary>
+        /// Ask peer to log all traffic via _verboseAction passed into the constructor
+        /// Ignored (verbose is always false) if _verboseAction is null
+        /// </summary>
+        /// <param name="verbose">true means log all traffic</param>
+        public void SetVerbose(bool verbose)
+        {
+            _verbose = _verboseAction != null && verbose;
         }
 
         public override string ToString()
