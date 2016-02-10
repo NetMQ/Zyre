@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace NetMQ.Zyre.Tests
@@ -6,6 +7,11 @@ namespace NetMQ.Zyre.Tests
     [TestFixture]
     public class ZreZyreTest
     {
+        private void ConsoleWrite(string str)
+        {
+            Console.WriteLine(str);
+        }
+
         /// <summary>
         /// Parallel to zeromq/zyre zyre.c zyre_test()
         /// except it uses gossip, which we don't support
@@ -14,8 +20,8 @@ namespace NetMQ.Zyre.Tests
         public void ZyreTests()
         {
             // Create two nodes
-            using (var node1 = new Zyre("node1"))
-            using (var node2 = new Zyre("node2"))
+            using (var node1 = new Zyre("node1", ConsoleWrite))
+            using (var node2 = new Zyre("node2", ConsoleWrite))
             {
                 int major, minor, patch;
                 node1.Version(out major, out minor, out patch);
@@ -24,9 +30,10 @@ namespace NetMQ.Zyre.Tests
                 node1.Should().NotBeNull();
                 node1.Name().Should().Be("node1");
                 node2.Should().NotBeNull();
-                node2.Name().Should().Be("node");
+                node2.Name().Should().Be("node2");
 
                 node1.SetHeader("X-HELLO", "World");
+                node1.SetVerbose();
 
                 //// Start both nodes
                 //node1.Start();

@@ -17,6 +17,7 @@ namespace NetMQ.Zyre
         private const byte BeaconVersion = 0x1;
         private const byte UbyteMax = byte.MaxValue;
 
+        #region Private Variables
         /// <summary>
         /// Pipe back to application
         /// ReceiveAPI() receives messages from the API and sends command replies and signals via the pipe
@@ -111,6 +112,18 @@ namespace NetMQ.Zyre
         private readonly NetMQActor _actor;
 
         /// <summary>
+        /// Do we log traffic and failures? 
+        /// </summary>
+        private bool _verbose;
+
+        /// <summary>
+        /// The action to take when _verbose
+        /// </summary>
+        private Action<string> _verboseAction;
+
+        #endregion Private Variables
+
+        /// <summary>
         /// True when Start() has finished, False when Stop() has finished.
         /// </summary>
         public bool IsRunning { get; private set; }
@@ -121,15 +134,19 @@ namespace NetMQ.Zyre
         /// outbox is passed to ZreNode for sending Zyre message traffic back to caller.
         /// </summary>
         /// <param name="outbox"></param>
+        /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        public static NetMQActor Create(PairSocket outbox)
+        public static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
         {
             var node = new ZreNode(outbox);
             return node._actor;
         }
 
-        private ZreNode(PairSocket outbox)
+        private ZreNode(PairSocket outbox, Action<string> verboseAction = null)
         {
+            _outbox = outbox;
+            _verboseAction = verboseAction;
+
             _inbox = new RouterSocket();
 
             //  Use ZMQ_ROUTER_HANDOVER so that when a peer disconnects and
@@ -138,7 +155,6 @@ namespace NetMQ.Zyre
             // NOTE: This RouterHandover option apparently doesn't exist in NetMQ 
             //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
 
-            _outbox = outbox;
             //_beaconPort = ZreDiscoveryPort;
             _interval = TimeSpan.Zero; // Use default
             _uuid = Guid.NewGuid();
@@ -358,6 +374,9 @@ namespace NetMQ.Zyre
                     var value = request.Pop().ConvertToString();
                     _headers[name] = value;
                     break;
+                case "SET VERBOSE":
+                    _verbose = _verboseAction != null;
+                    break;
                 case "SET PORT":
                     var str = request.Pop().ConvertToString();
                     int.TryParse(str, out _port);
@@ -390,9 +409,9 @@ namespace NetMQ.Zyre
                     break;
                 case "SHOUT":
                     // Get group to send message to
-                    var groupName = request.Pop().ConvertToString();
+                    var groupNameShout = request.Pop().ConvertToString();
                     ZreGroup group;
-                    if (_ownGroups.TryGetValue(groupName, out group))
+                    if (_ownGroups.TryGetValue(groupNameShout, out group))
                     {
                         var msg = new ZreMsg
                         {
@@ -400,6 +419,10 @@ namespace NetMQ.Zyre
                             Shout = {Content = request}
                         };
                         group.Send(msg);
+                    }
+                    if (_verbose)
+                    {
+                        _verboseAction(string.Format("({0} SHOUT group={1}", _name, groupNameShout));
                     }
                     break;
                 case "JOIN":
@@ -418,6 +441,10 @@ namespace NetMQ.Zyre
                         foreach (var peerJoin in _peers.Values)
                         {
                             peerJoin.Send(msg);
+                        }
+                        if (_verbose)
+                        {
+                            _verboseAction(string.Format("({0} JOIN group={1}", _name, groupNameJoin));
                         }
                     }
                     break;
@@ -439,6 +466,10 @@ namespace NetMQ.Zyre
                             peerLeave.Send(msg);
                         }
                         _ownGroups.Remove(groupNameLeave);
+                        if (_verbose)
+                        {
+                            _verboseAction(string.Format("({0} LEAVE group={1}", _name, groupNameLeave));
+                        }
                     }
                     break;
                 case "PEERS":
@@ -551,6 +582,7 @@ namespace NetMQ.Zyre
             }
             peer = ZrePeer.NewPeer(_peers, uuid);
             peer.SetOrigin(_name);
+            peer.SetVerbose(_verbose);
             peer.Connect(_uuid, _endpoint);
 
             // Handshake discovery by sending HELLO as first message
@@ -588,6 +620,10 @@ namespace NetMQ.Zyre
         {
             // Tell the calling application the peer has gone
             _outbox.SendMoreFrame("EXIT").SendMoreFrame(peer.Uuid.ToString()).SendFrame(peer.Name);
+            if (_verbose)
+            {
+                _verboseAction(string.Format("({0} EXIT name={1} endpoint={2}", _name, peer.Name, peer.Endpoint));
+            }
 
             // Remove peer from any groups we've got it in
             foreach (var peerGroup in _peerGroups.Values)
@@ -627,6 +663,10 @@ namespace NetMQ.Zyre
 
             // Now tell the caller about the peer joined group
             _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(_name);
+            if (_verbose)
+            {
+                _verboseAction(string.Format("({0} JOIN name={1} group={2}", _name, peer.Name, groupName));
+            }
             return group;
         }
 
@@ -643,6 +683,10 @@ namespace NetMQ.Zyre
 
             // Now tell the caller about the peer left group
             _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(_name);
+            if (_verbose)
+            {
+                _verboseAction(string.Format("({0} LEAVE name={1} group={2}", _name, peer.Name, groupName));
+            }
             return group;
         }
 
@@ -711,7 +755,10 @@ namespace NetMQ.Zyre
                     outMsg.Append(headersBuffer);
                     outMsg.Append(helloMessage.Endpoint);
                     _outbox.SendMultipartMessage(outMsg);
-
+                    if (_verbose)
+                    {
+                        _verboseAction(string.Format("({0} ENTER name={1} endpoint={2}", _name, peer.Name, peer.Endpoint));
+                    }
                     // Join peer to listed groups
                     foreach (var groupName in helloMessage.Groups)
                     {
@@ -823,6 +870,10 @@ namespace NetMQ.Zyre
                 // ZeroMQTODO: do this only once for a peer in this state;
                 // it would be nicer to use a proper state machine
                 // for peer management.
+                if (_verbose)
+                {
+                    _verboseAction(string.Format("({0} peer seems dead/slow name={1} endpoint={2}", _name, peer.Name, peer.Endpoint));
+                }
                 ZreMsg.SendPing(_outbox, 0);
 
                 // Inform the calling application this peer is being evasive

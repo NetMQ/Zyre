@@ -29,7 +29,7 @@ namespace NetMQ.Zyre
         private ushort _wantSequence;                   // Incoming message sequence
         private Dictionary<string, string> _headers;    // Peer headers 
         private bool _verbose;                          // Do we log traffic and failures? 
-        private Action<string> _verboseAction;          // The action to take when _verbose
+        private readonly Action<string> _verboseAction; // The action to take when _verbose
         
         private ZrePeer(Guid uuid, Action<string> verboseAction = null)
         {
