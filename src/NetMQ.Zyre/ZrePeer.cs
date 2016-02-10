@@ -15,22 +15,89 @@ namespace NetMQ.Zyre
         private const ushort UshortMax = ushort.MaxValue;
         private const byte UbyteMax = byte.MaxValue;
 
-        private DealerSocket _mailbox;                  // Socket through to peer
-        private readonly Guid _uuid;                    // Identity guid, 16 bytes
-        private string _endpoint;                       // Endpoint connected to
-        private string _name;                           // Peer's internal name
-        private string _origin;                         // Origin node's internal name
-        private long _evasiveAt;                        // Peer is being evasive
-        private long _expiredAt;                        // Peer has expired by now
-        private bool _connected;                        // Peer will send messages
-        private bool _ready;                            // Peer has said Hello to us
-        private byte _status;                           // Our status counter
-        private ushort _sentSequence;                   // Outgoing message sequence
-        private ushort _wantSequence;                   // Incoming message sequence
-        private Dictionary<string, string> _headers;    // Peer headers 
-        private bool _verbose;                          // Do we log traffic and failures? 
-        private readonly Action<string> _verboseAction; // The action to take when _verbose
-        
+        #region Private Variables
+
+        /// <summary>
+        /// Socket through to peer.
+        /// DealerSocket connected to the peer's RouterSocket.
+        /// ZRE messages are sent from this _mailbox for each peer
+        ///    and they are received by the ZreNode's RouterSocket _inbox.
+        /// </summary>
+        private DealerSocket _mailbox;
+
+        /// <summary>
+        /// Identity guid of the peer, 16 bytes
+        /// </summary>
+        private readonly Guid _uuid;
+
+        /// <summary>
+        /// Endpoint of the peer connected to
+        /// </summary>
+        private string _endpoint;
+
+        /// <summary>
+        /// Peer's internal name
+        /// </summary>
+        private string _name;
+
+        /// <summary>
+        /// Origin node's internal name
+        /// </summary>
+        private string _origin;
+
+        /// <summary>
+        /// Peer is being evasive
+        /// </summary>
+        private long _evasiveAt;
+
+        /// <summary>
+        /// Peer has expired by now
+        /// </summary>
+        private long _expiredAt;
+
+        /// <summary>
+        /// Peer will send messages
+        /// </summary>
+        private bool _connected;
+
+        /// <summary>
+        /// Peer has said Hello to us
+        /// </summary>
+        private bool _ready;
+
+        /// <summary>
+        /// Our status counter
+        /// </summary>
+        private byte _status;
+
+        /// <summary>
+        /// Outgoing message sequence counter used for detecting lost messages
+        /// </summary>
+        private ushort _sentSequence;
+
+        /// <summary>
+        /// Incoming message sequence counter used for detecting lost messages
+        /// </summary>
+        private ushort _wantSequence;
+
+        /// <summary>
+        /// Peer headers
+        /// </summary>
+        private Dictionary<string, string> _headers;
+
+        /// <summary>
+        /// Do we log traffic and failures?
+        /// </summary>
+        private bool _verbose;
+
+        /// <summary>
+        /// The action to take when _verbose is true.
+        /// </summary>
+        private readonly Action<string> _verboseAction;
+
+        #endregion Private Variables
+
+
         private ZrePeer(Guid uuid, Action<string> verboseAction = null)
         {
             _uuid = uuid;
@@ -75,6 +142,7 @@ namespace NetMQ.Zyre
         internal void Connect(Guid replyTo, string endpoint)
         {
             Debug.Assert(!_connected);
+
             //  Create new outgoing socket (drop any messages in transit)
             _mailbox = new DealerSocket(endpoint) // default action is to connect to the peer node
             {
@@ -91,13 +159,14 @@ namespace NetMQ.Zyre
                     //  Set a high-water mark that allows for reasonable activity
                     SendHighWatermark = PeerExpired * 100,
 
-                    // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses 
+                    // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses TrySend() with TimeSpan.Zero
                 }
             };
             if (_verbose)
             {
-                _verboseAction(string.Format("({0}) connect to peer: {1}", _origin, _endpoint));
+                _verboseAction(string.Format("({0}) mailbox connecting to peer endPoint={1}, reply-to identity={2}", _origin, _endpoint, replyTo.ToShortString6()));
             }
+            _mailbox.Connect(endpoint);
             _endpoint = endpoint;
             _connected = true;
             _ready = false;
@@ -137,7 +206,7 @@ namespace NetMQ.Zyre
                 msg.Sequence = ++_sentSequence;
                 if (_verbose)
                 {
-                    _verboseAction(string.Format("({0}) send {1} to peer={2} sequence={3}", _origin, msg.Command, _name, _sentSequence));
+                    _verboseAction(string.Format("({0}) sending {1} to peer name={2} sequence={3}", _origin, msg.Command, _name, msg.Sequence));
                 }
                 msg.Send(_mailbox);
             }
@@ -328,7 +397,7 @@ namespace NetMQ.Zyre
             }
             else
             {
-                _wantSequence = _wantSequence == UshortMax ? (ushort)0 : _wantSequence++;
+                _wantSequence = _wantSequence == UshortMax ? (ushort)0 : ++_wantSequence;
             }
             if (_wantSequence != msg.Sequence)
             {
@@ -354,7 +423,9 @@ namespace NetMQ.Zyre
         public override string ToString()
         {
             var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
-            return string.Format("name:{0} router endpoint:{1} connected:{2} ready:{3} status:{4}", name, _endpoint, _connected, _ready, _status);
+            var origin = string.IsNullOrEmpty(_origin) ? "NotSet" : _origin;
+            return string.Format("origin:{0} name:{1} router endpoint:{2} connected:{3} ready:{4} status:{5} guidShort:{6} guid:{7}", 
+                origin, name, _endpoint, _connected, _ready, _status, _uuid.ToShortString6(), _uuid);
         }
 
         /// <summary>

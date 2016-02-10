@@ -30,17 +30,17 @@ namespace NetMQ.Zyre.Tests
 
                 node1.Should().NotBeNull();
                 node1.Name().Should().Be("node1");
-                ConsoleWrite(string.Format("node1 endPoint={0}", node1.EndPoint()));
                 node2.Should().NotBeNull();
                 node2.Name().Should().Be("node2");
-                ConsoleWrite(string.Format("node2 endPoint={0}", node2.EndPoint()));
 
                 node1.SetHeader("X-HELLO", "World");
                 node1.SetVerbose();
 
                 // Start both nodes
                 node1.Start();
+                ConsoleWrite(string.Format("node1 endPoint={0}", node1.EndPoint()));
                 node2.Start();
+                ConsoleWrite(string.Format("node2 endPoint={0}", node2.EndPoint()));
 
                 var uuid1 = node1.Uuid;
                 uuid1.Should().NotBeEmpty();

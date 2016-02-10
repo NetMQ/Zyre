@@ -975,6 +975,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Send(IOutgoingSocket output)
         {
+            var identity = ((DealerSocket)output).Options.Identity;
             if (output is RouterSocket)
                 output.SendMoreFrame(RoutingId);
 
@@ -1440,7 +1441,7 @@ namespace NetMQ.Zyre
                     sb.Append(Hello.Name);
                     sb.Append(" Seq:");
                     sb.Append(Hello.Sequence);
-                    sb.Append(' ');
+                    sb.Append(" EndPoint:");
                     sb.Append(Hello.Endpoint);
                     break;
                 case MessageId.Whisper:
@@ -1451,13 +1452,13 @@ namespace NetMQ.Zyre
                 case MessageId.Join:
                     sb.Append(" Seq:");
                     sb.Append(Hello.Sequence);
-                    sb.Append(' ');
+                    sb.Append(" Group:");
                     sb.Append(Join.Group);
                     break;
                 case MessageId.Leave:
                     sb.Append(" Seq:");
                     sb.Append(Hello.Sequence);
-                    sb.Append(' ');
+                    sb.Append(" Group:");
                     sb.Append(Leave.Group);
                     break;
                 case MessageId.Ping:
