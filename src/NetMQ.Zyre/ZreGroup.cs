@@ -1,4 +1,4 @@
-﻿/* This Source Code Form is subject to the terms of the Mozilla Public
+﻿/* This Source Code Form is subject to the terms of the Mozilla internal
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 using System;
@@ -11,7 +11,7 @@ namespace NetMQ.Zyre
         private readonly string _name;
         private readonly Dictionary<Guid, ZrePeer> _peers;
 
-        public ZreGroup(string name)
+        internal ZreGroup(string name)
         {
             _name = name;
             _peers = new Dictionary<Guid, ZrePeer>();
@@ -23,7 +23,7 @@ namespace NetMQ.Zyre
         /// <param name="name">name of the new group</param>
         /// <param name="container">container of groups</param>
         /// <returns></returns>
-        public static ZreGroup NewGroup(string name, Dictionary<string, ZreGroup> container)
+        internal static ZreGroup NewGroup(string name, Dictionary<string, ZreGroup> container)
         {
             var group = new ZreGroup(name);
             container[name] = group;
@@ -33,7 +33,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Dispose this class and all objects it holds
         /// </summary>
-        public void Destroy()
+        internal void Destroy()
         {
             Dispose();
         }
@@ -43,7 +43,7 @@ namespace NetMQ.Zyre
         /// Ignore duplicate joins
         /// </summary>
         /// <param name="peer"></param>
-        public void Join(ZrePeer peer)
+        internal void Join(ZrePeer peer)
         {
             _peers[peer.Uuid] = peer;
             peer.IncrementStatus();
@@ -53,7 +53,7 @@ namespace NetMQ.Zyre
         /// Remove peer from group
         /// </summary>
         /// <param name="peer"></param>
-        public void Leave(ZrePeer peer)
+        internal void Leave(ZrePeer peer)
         {
             _peers.Remove(peer.Uuid);
             peer.IncrementStatus();
@@ -63,7 +63,7 @@ namespace NetMQ.Zyre
         /// Send message to all peers in group
         /// </summary>
         /// <param name="msg"></param>
-        public void Send(ZreMsg msg)
+        internal void Send(ZreMsg msg)
         {
             foreach (var peer in _peers.Values)
             {

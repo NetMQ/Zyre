@@ -1,4 +1,4 @@
-﻿/* This Source Code Form is subject to the terms of the Mozilla Public
+﻿/* This Source Code Form is subject to the terms of the Mozilla internal
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 using System;
@@ -67,12 +67,12 @@ namespace NetMQ.Zyre
         private RouterSocket _inbox;
 
         /// <summary>
-        /// Our public name
+        /// Our internal name
         /// </summary>
         private string _name;
 
         /// <summary>
-        /// Our public endpoint
+        /// Our internal endpoint
         /// </summary>
         private string _endpoint;
 
@@ -119,14 +119,14 @@ namespace NetMQ.Zyre
         /// <summary>
         /// The action to take when _verbose
         /// </summary>
-        private Action<string> _verboseAction;
-
-        #endregion Private Variables
+        private readonly Action<string> _verboseAction;
 
         /// <summary>
         /// True when Start() has finished, False when Stop() has finished.
         /// </summary>
-        public bool IsRunning { get; private set; }
+        private bool _isRunning;
+
+        #endregion Private Variables
 
         /// <summary>
         /// Create a new node and return the actor that controls it.
@@ -136,7 +136,7 @@ namespace NetMQ.Zyre
         /// <param name="outbox"></param>
         /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        public static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
+        internal static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
         {
             var node = new ZreNode(outbox, verboseAction);
             return node._actor;
@@ -174,9 +174,9 @@ namespace NetMQ.Zyre
         /// Start node. Use beacon discovery
         /// </summary>
         /// <returns>true if OK, false if not possible</returns>
-        public bool Start()
+        private bool Start()
         {
-            if (IsRunning)
+            if (_isRunning)
             {
                 throw new InvalidOperationException("ZreNode is already running");
             }
@@ -213,7 +213,7 @@ namespace NetMQ.Zyre
             // Start polling on inbox
             _inbox.ReceiveReady += OnInboxReady;
             _poller.Add(_inbox);
-            IsRunning = true;
+            _isRunning = true;
             return true;
         }
 
@@ -231,9 +231,9 @@ namespace NetMQ.Zyre
         /// Stop node discovery and interconnection
         /// </summary>
         /// <returns></returns>
-        public bool Stop()
+        private bool Stop()
         {
-            if (!IsRunning)
+            if (!_isRunning)
             {
                 throw new InvalidOperationException("ZreNode is not running");
             }
@@ -254,7 +254,7 @@ namespace NetMQ.Zyre
             msg.Append(_uuid.ToString());
             msg.Append(_name);
             _outbox.TrySendMultipartMessage(TimeSpan.Zero, msg);
-            IsRunning = false;
+            _isRunning = false;
             return true;
         }
 
@@ -324,7 +324,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="peer">The peer to get msg</param>
         /// <param name="msg">the message to send</param>
-        public void SendMessageToPeer(ZrePeer peer, ZreMsg msg)
+        private void SendMessageToPeer(ZrePeer peer, ZreMsg msg)
         {
             peer.Send(msg);
         }
@@ -333,7 +333,7 @@ namespace NetMQ.Zyre
         /// Send message to all peers
         /// </summary>
         /// <param name="msg">the message to send</param>
-        public void SendPeers(ZreMsg msg)
+        private void SendPeers(ZreMsg msg)
         {
             foreach (var peer in _peers.Values)
             {
@@ -349,7 +349,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Here we handle the different control messages from the front-end
         /// </summary>
-        public void ReceiveApi()
+        private void ReceiveApi()
         {
             // Get the whole message off the pipe in one go
             var request = _pipe.ReceiveMultipartMessage();
@@ -542,7 +542,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Increment status
         /// </summary>
-        public void IncrementStatus()
+        private void IncrementStatus()
         {
             _status = _status == UbyteMax ? (byte) 0 : ++_status;
         }
@@ -552,7 +552,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="endpoint"></param>
-        public void PurgePeer(ZrePeer peer, string endpoint)
+        private void PurgePeer(ZrePeer peer, string endpoint)
         {
             if (peer.Endpoint == endpoint)
             {
@@ -566,7 +566,7 @@ namespace NetMQ.Zyre
         /// <param name="uuid">the identity of peer</param>
         /// <param name="endpoint">the endpoint to which we will connect the new peer</param>
         /// <returns>A peer (existing, or new one connected to endpoint)</returns>
-        public ZrePeer RequirePeer(Guid uuid, string endpoint)
+        private ZrePeer RequirePeer(Guid uuid, string endpoint)
         {
             Debug.Assert(!string.IsNullOrEmpty(endpoint));
             ZrePeer peer;
@@ -607,7 +607,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="group"></param>
         /// <param name="peer"></param>
-        public void DeletePeer(ZreGroup group, ZrePeer peer)
+        private void DeletePeer(ZreGroup group, ZrePeer peer)
         {
             group.Leave(peer);
         }
@@ -616,7 +616,7 @@ namespace NetMQ.Zyre
         /// Remove a peer from our data structures
         /// </summary>
         /// <param name="peer"></param>
-        public void RemovePeer(ZrePeer peer)
+        private void RemovePeer(ZrePeer peer)
         {
             // Tell the calling application the peer has gone
             _outbox.SendMoreFrame("EXIT").SendMoreFrame(peer.Uuid.ToString()).SendFrame(peer.Name);
@@ -640,7 +640,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        public ZreGroup RequirePeerGroup(string groupName)
+        private ZreGroup RequirePeerGroup(string groupName)
         {
             ZreGroup group;
             if (!_peerGroups.TryGetValue(groupName, out group))
@@ -656,7 +656,7 @@ namespace NetMQ.Zyre
         /// <param name="peer">The peer that is joining thie group</param>
         /// <param name="groupName">The name of the group to join</param>
         /// <returns>the group joined</returns>
-        public ZreGroup JoinPeerGroup(ZrePeer peer, string groupName)
+        private ZreGroup JoinPeerGroup(ZrePeer peer, string groupName)
         {
             var group = RequirePeerGroup(groupName);
             group.Join(peer);
@@ -676,7 +676,7 @@ namespace NetMQ.Zyre
         /// <param name="peer"></param>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        public ZreGroup LeavePeerGroup(ZrePeer peer, string groupName)
+        private ZreGroup LeavePeerGroup(ZrePeer peer, string groupName)
         {
             var group = RequirePeerGroup(groupName);
             group.Leave(peer);
@@ -693,7 +693,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Here we handle messages coming from other peers
         /// </summary>
-        public void ReceivePeer()
+        private void ReceivePeer()
         {
             Guid uuid;
             var msg = ZreMsg.ReceiveNew(_inbox, out uuid);
@@ -822,7 +822,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Handle beacon data
         /// </summary>
-        public void ReceiveBeacon()
+        private void ReceiveBeacon()
         {
             // Get IP address and beacon of peer
             string peerName;
@@ -885,7 +885,7 @@ namespace NetMQ.Zyre
             return false;
         }
 
-        public void Dump()
+        private void Dump()
         {
             if (_verboseAction == null)
             {

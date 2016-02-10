@@ -1,4 +1,4 @@
-﻿/* This Source Code Form is subject to the terms of the Mozilla Public
+﻿/* This Source Code Form is subject to the terms of the Mozilla internal
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 using System;
@@ -18,8 +18,8 @@ namespace NetMQ.Zyre
         private DealerSocket _mailbox;                  // Socket through to peer
         private readonly Guid _uuid;                    // Identity guid, 16 bytes
         private string _endpoint;                       // Endpoint connected to
-        private string _name;                           // Peer's public name
-        private string _origin;                         // Origin node's public name
+        private string _name;                           // Peer's internal name
+        private string _origin;                         // Origin node's internal name
         private long _evasiveAt;                        // Peer is being evasive
         private long _expiredAt;                        // Peer has expired by now
         private bool _connected;                        // Peer will send messages
@@ -49,7 +49,7 @@ namespace NetMQ.Zyre
         /// <param name="guid">The identity for this peer</param>
         /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        public static ZrePeer NewPeer(Dictionary<Guid, ZrePeer> container, Guid guid, Action<string> verboseAction = null)
+        internal static ZrePeer NewPeer(Dictionary<Guid, ZrePeer> container, Guid guid, Action<string> verboseAction = null)
         {
             var peer = new ZrePeer(guid, verboseAction);
             container[guid] = peer; // overwrite any existing entry for same uuid
@@ -59,7 +59,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Disconnect this peer and Dispose this class.
         /// </summary>
-        public void Destroy()
+        internal void Destroy()
         {
             Debug.Assert(_mailbox != null, "Mailbox must not be null");
             Disconnect();
@@ -72,7 +72,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="replyTo"></param>
         /// <param name="endpoint"></param>
-        public void Connect(Guid replyTo, string endpoint)
+        internal void Connect(Guid replyTo, string endpoint)
         {
             Debug.Assert(!_connected);
             //  Create new outgoing socket (drop any messages in transit)
@@ -103,7 +103,7 @@ namespace NetMQ.Zyre
             _ready = false;
         }
 
-        public static byte[] GetIdentity(Guid replyTo)
+        internal static byte[] GetIdentity(Guid replyTo)
         {
             var result = new byte[17];
             result[0] = 1;
@@ -116,7 +116,7 @@ namespace NetMQ.Zyre
         /// Disconnect peer mailbox 
         /// No more messages will be sent to peer until connected again
         /// </summary>
-        public void Disconnect()
+        internal void Disconnect()
         {
             _mailbox.Dispose();
             _mailbox = null;
@@ -130,7 +130,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="msg">the message</param>
         /// <returns>always true</returns>
-        public bool Send(ZreMsg msg)
+        internal bool Send(ZreMsg msg)
         {
             if (_connected)
             {
@@ -147,7 +147,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer connected status
         /// </summary>
-        public bool Connected
+        internal bool Connected
         {
             get { return _connected; }
         }
@@ -155,7 +155,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer identity string
         /// </summary>
-        public Guid Uuid
+        internal Guid Uuid
         {
             get { return _uuid; }
         }
@@ -163,7 +163,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer connection endpoint
         /// </summary>
-        public string Endpoint
+        internal string Endpoint
         {
             get { return _endpoint; }
         }
@@ -171,7 +171,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Register activity at peer
         /// </summary>
-        public void Refresh()
+        internal void Refresh()
         {
             _evasiveAt = CurrentTimeMilliseconds() + PeerEvasive;
             _expiredAt = CurrentTimeMilliseconds() + PeerExpired;
@@ -181,7 +181,7 @@ namespace NetMQ.Zyre
         /// Milliseconds since January 1, 1970 UTC
         /// </summary>
         /// <returns></returns>
-        public static long CurrentTimeMilliseconds()
+        internal static long CurrentTimeMilliseconds()
         {
             return (DateTime.UtcNow.Ticks - 621355968000000000) / 10000;
         }
@@ -189,7 +189,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer future expired time
         /// </summary>
-        public long EvasiveAt
+        internal long EvasiveAt
         {
             get { return _evasiveAt; }
         }
@@ -197,7 +197,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer future evasive time
         /// </summary>
-        public long ExpiredAt
+        internal long ExpiredAt
         {
             get { return _expiredAt; }
         }
@@ -205,7 +205,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer name
         /// </summary>
-        public string Name
+        internal string Name
         {
             get { return _name ?? ""; }
         }
@@ -215,7 +215,7 @@ namespace NetMQ.Zyre
         /// This gives us a state change count for the peer, which we can
         /// check against its claimed status, to detect message loss.
         /// </summary>
-        public byte Status
+        internal byte Status
         {
             get { return _status; }
         }
@@ -223,7 +223,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Increment status
         /// </summary>
-        public void IncrementStatus()
+        internal void IncrementStatus()
         {
             _status = _status == UbyteMax ? (byte)0 : ++_status;
         }
@@ -232,7 +232,7 @@ namespace NetMQ.Zyre
         /// Set peer name
         /// </summary>
         /// <param name="name"></param>
-        public void SetName(string name)
+        internal void SetName(string name)
         {
             _name = name;
         }
@@ -241,7 +241,7 @@ namespace NetMQ.Zyre
         /// Set current node name, for logging
         /// </summary>
         /// <param name="originNodeName"></param>
-        public void SetOrigin(string originNodeName)
+        internal void SetOrigin(string originNodeName)
         {
             _origin = originNodeName;
         }
@@ -250,7 +250,7 @@ namespace NetMQ.Zyre
         /// Set peer status
         /// </summary>
         /// <param name="status"></param>
-        public void SetStatus(byte status)
+        internal void SetStatus(byte status)
         {
             _status = status;
         }
@@ -258,7 +258,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer ready state
         /// </summary>
-        public bool Ready
+        internal bool Ready
         {
             get { return _ready; }
         }
@@ -267,7 +267,7 @@ namespace NetMQ.Zyre
         /// Set peer ready
         /// </summary>
         /// <param name="ready"></param>
-        public void SetReady(bool ready)
+        internal void SetReady(bool ready)
         {
             _ready = ready;
         }
@@ -278,7 +278,7 @@ namespace NetMQ.Zyre
         /// <param name="key">The he</param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public string Header(string key, string defaultValue)
+        internal string Header(string key, string defaultValue)
         {
             string value;
             if (!_headers.TryGetValue(key, out value))
@@ -292,7 +292,7 @@ namespace NetMQ.Zyre
         /// Get peer headers table
         /// </summary>
         /// <returns></returns>
-        public Dictionary<string, string> GetHeaders()
+        internal Dictionary<string, string> GetHeaders()
         {
             return _headers;
         }
@@ -301,7 +301,7 @@ namespace NetMQ.Zyre
         /// Set peer headers from provided dictionary
         /// </summary>
         /// <returns></returns>
-        public void SetHeaders(Dictionary<string, string> headers)
+        internal void SetHeaders(Dictionary<string, string> headers)
         {
             _headers = headers;
         }
@@ -311,7 +311,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="msg"></param>
         /// <returns>true if we have lost one or more message</returns>
-        public bool MessagesLost(ZreMsg msg)
+        internal bool MessagesLost(ZreMsg msg)
         {
             Debug.Assert(msg != null);
 
@@ -346,7 +346,7 @@ namespace NetMQ.Zyre
         /// Ignored (verbose is always false) if _verboseAction is null
         /// </summary>
         /// <param name="verbose">true means log all traffic</param>
-        public void SetVerbose(bool verbose)
+        internal void SetVerbose(bool verbose)
         {
             _verbose = _verboseAction != null && verbose;
         }
