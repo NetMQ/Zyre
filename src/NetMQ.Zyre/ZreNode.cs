@@ -31,15 +31,9 @@ namespace NetMQ.Zyre
         private PairSocket _outbox;
 
         /// <summary>
-        /// API shut us down
-        /// </summary>
-        private bool _terminated;
-
-
-        /// <summary>
         /// Beacon port number
         /// </summary>
-        private int _beaconPort;
+        private readonly int _beaconPort;
 
         /// <summary>
         /// Beacon interval
@@ -155,7 +149,7 @@ namespace NetMQ.Zyre
             // NOTE: This RouterHandover option apparently doesn't exist in NetMQ 
             //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
 
-            //_beaconPort = ZreDiscoveryPort;
+            _beaconPort = ZreDiscoveryPort;
             _interval = TimeSpan.Zero; // Use default
             _uuid = Guid.NewGuid();
             _peers = new Dictionary<Guid, ZrePeer>();
@@ -182,7 +176,7 @@ namespace NetMQ.Zyre
             }
             Debug.Assert(_beacon == null);
             _beacon = new NetMQBeacon();
-            _beacon.Configure(ZreDiscoveryPort);
+            _beacon.Configure(_beaconPort);
 
             // listen to incoming beacons
             _beacon.ReceiveReady += OnBeaconReady;
@@ -231,7 +225,7 @@ namespace NetMQ.Zyre
         /// Stop node discovery and interconnection
         /// </summary>
         /// <returns></returns>
-        private bool Stop()
+        private void Stop()
         {
             if (!_isRunning)
             {
@@ -255,7 +249,6 @@ namespace NetMQ.Zyre
             msg.Append(_name);
             _outbox.TrySendMultipartMessage(TimeSpan.Zero, msg);
             _isRunning = false;
-            return true;
         }
 
         /// <summary>
@@ -361,6 +354,9 @@ namespace NetMQ.Zyre
                     break;
                 case "NAME":
                     _pipe.SendFrame(_name);
+                    break;
+                case "ENDPOINT":
+                    _pipe.SendFrame(_endpoint);
                     break;
                 case "SET NAME":
                     _name = request.Pop().ConvertToString();
@@ -513,7 +509,7 @@ namespace NetMQ.Zyre
                     Dump();
                     break;
                 case NetMQActor.EndShimMessage:
-                    _terminated = true;
+                    // API shut us down
                     if (_poller != null)
                     {
                         _poller.Stop();

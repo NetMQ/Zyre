@@ -115,11 +115,27 @@ namespace NetMQ.Zyre
             }
         }
 
+        /// <summary>
+        /// Return our node endPoint, after successful initialization.
+        /// </summary>
+        /// <returns></returns>
+        public string EndPoint()
+        {
+            _actor.SendFrame("ENDPOINT");
+            _endpoint = _actor.ReceiveFrameString();
+            return _endpoint;
+        }
+
+        /// <summary>
+        /// Return our node name, after successful initialization. By default
+        /// is taken from the UUID and shortened.
+        /// </summary>
+        /// <returns></returns>
         public string Name()
         {
             _actor.SendFrame("NAME");
-            var name = _actor.ReceiveFrameString();
-            return name;
+            _name = _actor.ReceiveFrameString();
+            return _name;
         }
 
         /// <summary>
