@@ -138,7 +138,7 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
         {
-            var node = new ZreNode(outbox);
+            var node = new ZreNode(outbox, verboseAction);
             return node._actor;
         }
 
@@ -182,12 +182,10 @@ namespace NetMQ.Zyre
             }
             Debug.Assert(_beacon == null);
             _beacon = new NetMQBeacon();
-
             _beacon.Configure(ZreDiscoveryPort);
 
             // listen to incoming beacons
             _beacon.ReceiveReady += OnBeaconReady;
-
 
             IPAddress bindTo = null; // TODO change this once this property comes thru from NuGet = _beacon.BoundTo;
             var interfaceCollection = new InterfaceCollection();
@@ -228,7 +226,6 @@ namespace NetMQ.Zyre
         {
             ReceiveBeacon();
         }
-
 
         /// <summary>
         /// Stop node discovery and interconnection
@@ -282,7 +279,7 @@ namespace NetMQ.Zyre
             }
             var uuidBytes = new byte[16];
             Buffer.BlockCopy(bytes, 4, uuidBytes, 0, 16);
-            uuid = new Guid(bytes);
+            uuid = new Guid(uuidBytes);
             var portBytes = new byte[2];
             Buffer.BlockCopy(bytes, 20, portBytes, 0, 2);
             port = NetworkOrderBitsConverter.ToInt16(portBytes);
@@ -360,7 +357,7 @@ namespace NetMQ.Zyre
             switch (command)
             {
                 case "UUID":
-                    _pipe.SendFrame(_uuid.ToString());
+                    _pipe.SendFrame(_uuid.ToByteArray());
                     break;
                 case "NAME":
                     _pipe.SendFrame(_name);
@@ -370,9 +367,9 @@ namespace NetMQ.Zyre
                     Debug.Assert(!string.IsNullOrEmpty(_name));
                     break;
                 case "SET HEADER":
-                    var name = request.Pop().ConvertToString();
+                    var key = request.Pop().ConvertToString();
                     var value = request.Pop().ConvertToString();
-                    _headers[name] = value;
+                    _headers[key] = value;
                     break;
                 case "SET VERBOSE":
                     _verbose = _verboseAction != null;
@@ -512,6 +509,9 @@ namespace NetMQ.Zyre
                     var ownGroupsKeyBuffer = Serialization.BinarySerialize(_ownGroups.Keys.ToList());
                     _pipe.SendFrame(ownGroupsKeyBuffer);
                     break;
+                case "DUMP":
+                    Dump();
+                    break;
                 case NetMQActor.EndShimMessage:
                     _terminated = true;
                     if (_poller != null)
@@ -544,7 +544,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void IncrementStatus()
         {
-            _status = _status == UbyteMax ? (byte) 0 : _status++;
+            _status = _status == UbyteMax ? (byte) 0 : ++_status;
         }
 
         /// <summary>
@@ -858,13 +858,14 @@ namespace NetMQ.Zyre
         /// - if peer has disappeared, expire it
         /// </summary>
         /// <param name="peer">the peer to ping</param>
-        public void PingPeer(ZrePeer peer)
+        /// <returns>true if this peer should be removed</returns>
+        private bool PingPeer(ZrePeer peer)
         {
             if (ZrePeer.CurrentTimeMilliseconds() >= peer.ExpiredAt)
             {
-                RemovePeer(peer);
+                return true;
             }
-            else if (ZrePeer.CurrentTimeMilliseconds() >= peer.EvasiveAt)
+            if (ZrePeer.CurrentTimeMilliseconds() >= peer.EvasiveAt)
             {
                 // If peer is being evasive, force a TCP ping.
                 // ZeroMQTODO: do this only once for a peer in this state;
@@ -881,18 +882,39 @@ namespace NetMQ.Zyre
                 _outbox.SendMoreFrame(peer.Uuid.ToByteArray());
                 _outbox.SendFrame(peer.Name);
             }
+            return false;
         }
 
-        /// <summary>
-        /// We do this once a second:
-        /// - if peer has gone quiet, send TCP ping and emit EVASIVE event
-        /// - if peer has disappeared, expire it
-        /// </summary>
-        public void PingAllPeersAndRemoveExpiredOnes()
+        public void Dump()
         {
-            foreach (var peer in _peers.Values)
+            if (_verboseAction == null)
             {
-                PingPeer(peer);
+                return;
+            }
+
+            _verboseAction("zyre_node: dump state");
+            _verboseAction(string.Format(" - name={0} uuid={1}", _name, _uuid));
+            _verboseAction(string.Format(" - endpoint={0}", _endpoint));
+            _verboseAction(string.Format(" - discovery=beacon port={0} interval={1}", _beaconPort, _interval));
+            _verboseAction(string.Format(" - headers={0}", _headers.Count));
+            foreach (var header in _headers)
+            {
+                _verboseAction(string.Format("key={0} value={1}", header.Key, header.Value));
+            }
+            _verboseAction(string.Format(" - peers={0}", _peers.Count));
+            foreach (var peer in _peers)
+            {
+                _verboseAction(string.Format("peer={0}", peer));
+            }
+            _verboseAction(string.Format(" - ownGroups={0}", _ownGroups.Count));
+            foreach (var group in _ownGroups )
+            {
+                _verboseAction(string.Format("ownGroup={0}", group));
+            }
+            _verboseAction(string.Format(" - peerGroups={0}", _peerGroups.Count));
+            foreach (var group in _peerGroups)
+            {
+                _verboseAction(string.Format("peerGroup={0}", group));
             }
         }
 
@@ -982,7 +1004,20 @@ namespace NetMQ.Zyre
         private void OnReapTimerElapsed(object sender, NetMQTimerEventArgs e)
         {
             // Ping all peers and reap any expired ones
-            PingAllPeersAndRemoveExpiredOnes();
+            // Don't remove them during the foreach loop
+            var peersToRemove = new List<ZrePeer>();
+            foreach (var peer in _peers.Values)
+            {
+                var isToBeRemoved = PingPeer(peer);
+                if (isToBeRemoved)
+                {
+                    peersToRemove.Add(peer);
+                }
+            }
+            foreach (var peer in peersToRemove)
+            {
+                RemovePeer(peer);
+            }
         }
     }
 

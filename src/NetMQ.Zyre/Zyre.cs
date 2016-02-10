@@ -78,19 +78,12 @@ namespace NetMQ.Zyre
         private string _endpoint;
 
         /// <summary>
-        /// The action to take when _verbose
-        /// </summary>
-        private Action<string> _verboseAction;
-
-        /// <summary>
         /// Create a Zyre API that communicates with a node on the ZRE bus.
         /// </summary>
         /// <param name="name">The name of the node</param>
         /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
         public Zyre (string name, Action<string> verboseAction = null)
         {
-            _verboseAction = verboseAction;
-
             // Create front-to-back pipe pair for data traffic
             // outbox is passed to ZreNode for sending Zyre message traffic back to _inbox
             PairSocket outbox;
@@ -98,7 +91,7 @@ namespace NetMQ.Zyre
 
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
-            _actor = ZreNode.Create(outbox);
+            _actor = ZreNode.Create(outbox, verboseAction);
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
@@ -365,6 +358,11 @@ namespace NetMQ.Zyre
             major = ZyreVersionMajor;
             minor = ZyreVersionMinor;
             patch = ZyreVersionPatch;
+        }
+
+        public void Dump()
+        {
+            _actor.SendFrame("DUMP");
         }
 
         public override string ToString()

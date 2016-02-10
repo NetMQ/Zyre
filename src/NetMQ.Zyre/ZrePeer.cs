@@ -225,7 +225,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void IncrementStatus()
         {
-            _status = _status == UbyteMax ? (byte)0 : _status++;
+            _status = _status == UbyteMax ? (byte)0 : ++_status;
         }
 
         /// <summary>
@@ -336,8 +336,9 @@ namespace NetMQ.Zyre
                 {
                     _verboseAction(string.Format("({0}) seq error from peer={1} expect={2}, got={3}", _origin, _name, _wantSequence, msg.Sequence));
                 }
+                return true;
             }
-            return _wantSequence != msg.Sequence;
+            return false;
         }
 
         /// <summary>
