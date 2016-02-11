@@ -141,17 +141,19 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="outbox"></param>
         /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
+        /// <param name="verbose">Turn on logging when true</param>
         /// <returns></returns>
-        internal static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
+        internal static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null, bool verbose = false)
         {
-            var node = new ZreNode(outbox, verboseAction);
+            var node = new ZreNode(outbox, verboseAction, verbose);
             return node._actor;
         }
 
-        private ZreNode(PairSocket outbox, Action<string> verboseAction = null)
+        private ZreNode(PairSocket outbox, Action<string> verboseAction = null, bool verbose = false)
         {
             _outbox = outbox;
             _verboseAction = verboseAction;
+            _verbose = verbose;
 
             _inbox = new RouterSocket();
 
@@ -212,7 +214,7 @@ namespace NetMQ.Zyre
             _endpoint = _inbox.Options.LastEndpoint;
             if (_verbose)
             {
-                _verboseAction(string.Format("Beacon for {0} is going out from _inbox bound to {1}", _uuid.ToShortString6(), _endpoint));
+                _verboseAction(string.Format("Beacon for {0} is going out from _inbox that is bound to {1}", _uuid.ToShortString6(), _endpoint));
             }
 
             //  Set broadcast/listen beacon
@@ -429,10 +431,6 @@ namespace NetMQ.Zyre
                         };
                         group.Send(msg);
                     }
-                    if (_verbose)
-                    {
-                        _verboseAction(string.Format("({0} SHOUT group={1}", _name, groupNameShout));
-                    }
                     break;
                 case "JOIN":
                     var groupNameJoin = request.Pop().ConvertToString();
@@ -454,10 +452,6 @@ namespace NetMQ.Zyre
                         foreach (var peerJoin in _peers.Values)
                         {
                             peerJoin.Send(msg);
-                        }
-                        if (_verbose)
-                        {
-                            _verboseAction(string.Format("({0} JOIN group={1}", _name, groupNameJoin));
                         }
                     }
                     break;
@@ -482,10 +476,6 @@ namespace NetMQ.Zyre
                             peerLeave.Send(msg);
                         }
                         _ownGroups.Remove(groupNameLeave);
-                        if (_verbose)
-                        {
-                            _verboseAction(string.Format("({0} LEAVE group={1}", _name, groupNameLeave));
-                        }
                     }
                     break;
                 case "PEERS":
@@ -610,7 +600,7 @@ namespace NetMQ.Zyre
             };
             if (_verboseAction != null)
             {
-                _verboseAction(string.Format("({0}) RequirePeer created new peer {1}. Sending Hello message={2}",_name, peer, helloMessage));
+                _verboseAction(string.Format("({0}) RequirePeer() created new peer {1}. Sending Hello message={2}",_name, peer, helloMessage));
             }
             peer.Send(helloMessage);
             return peer;
@@ -659,7 +649,7 @@ namespace NetMQ.Zyre
             ZreGroup group;
             if (!_peerGroups.TryGetValue(groupName, out group))
             {
-                group = new ZreGroup(groupName);
+                group = ZreGroup.NewGroup(groupName, _peerGroups);
             }
             return group;
         }
@@ -722,10 +712,10 @@ namespace NetMQ.Zyre
             {
                 if (_verboseAction != null)
                 {
-                    _verboseAction(string.Format("Received unknown peer into _inbox uuid={0}", uuid.ToShortString6()));
+                    _verboseAction(string.Format("Received Unknown Peer into _inbox uuid={0}", uuid.ToShortString6()));
                     if (msg.Id == ZreMsg.MessageId.Hello)
                     {
-                        _verboseAction(string.Format("Unknown peer endPoint={0}", msg.Hello.Endpoint));
+                        _verboseAction(string.Format("endPoint of the Unknown Peer={0}", msg.Hello.Endpoint));
                     }
                 }
             }
@@ -755,8 +745,16 @@ namespace NetMQ.Zyre
                 // Ignore command if peer isn't ready
                 return;
             }
+            if (_verbose)
+            {
+                _verboseAction(string.Format("({0}) ZreNode.ReceivePeer() received message={1} from peer={2} ", _name, msg, peer));
+            }
             if (peer.MessagesLost(msg))
             {
+                if (_verbose)
+                {
+                    _verboseAction(string.Format("({0}) MessagesLost! ZreNode.ReceivePeer() ignoring message={1} from peer={2} ", _name, msg, peer));
+                }
                 RemovePeer(peer);
                 return;
             }
@@ -863,10 +861,6 @@ namespace NetMQ.Zyre
             var indexOfColon = peerName.IndexOf(':');
             var addressWithoutPort = peerName.Substring(0, indexOfColon);
             var endPoint = string.Format("tcp://{0}:{1}", addressWithoutPort, port);
-            if (_verbose)
-            {
-                _verboseAction(string.Format("Valid beacon received from {0} at {1}", uuid.ToShortString6(), endPoint));
-            }
             ZrePeer peer;
             if (port > 0)
             {

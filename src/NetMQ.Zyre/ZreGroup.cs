@@ -11,7 +11,7 @@ namespace NetMQ.Zyre
         private readonly string _name;
         private readonly Dictionary<Guid, ZrePeer> _peers;
 
-        internal ZreGroup(string name)
+        private ZreGroup(string name)
         {
             _name = name;
             _peers = new Dictionary<Guid, ZrePeer>();

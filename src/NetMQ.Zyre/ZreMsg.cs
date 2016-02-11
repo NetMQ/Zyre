@@ -39,6 +39,9 @@ namespace NetMQ.Zyre
 
         #region Hello
 
+        /// <summary>
+        /// Greet a peer so it can connect back to us
+        /// </summary>
         public class HelloMessage
         {
             public HelloMessage()
@@ -56,32 +59,39 @@ namespace NetMQ.Zyre
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field. Always 1 for Hello
+            /// Get/Set the Sequence field. Always 1 for Hello.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
             /// <summary>
-            /// Get/Set the Endpoint field
+            /// Get/Set the Endpoint field.
+            /// Sender connect endpoint
+            /// Endpoint includes transport, etc. "tcp://127.0.0.1:2225"
             /// </summary>
             public string Endpoint { get; set; }
 
             /// <summary>
-            /// /// Get/Set the Groups list
+            /// Get/Set the Groups list.
+            /// List of groups sender is in.
             /// </summary>
             public List<string> Groups { get; set; }
 
             /// <summary>
-            /// Get/Set the Status field
+            /// Get/Set the Status field.
+            /// Sender groups status value.
             /// </summary>
             public byte Status { get; set; }
 
             /// <summary>
-            /// Get/Set the Name field
+            /// Get/Set the Name field.
+            /// Sender public name.
             /// </summary>
             public string Name { get; set; }
 
             /// <summary>
-            /// Get/Set the Headers dictionary
+            /// Get/Set the Headers dictionary.
+            /// Sender header properties.
             /// </summary>
             public Dictionary<string, string> Headers { get; set; }
 
@@ -231,6 +241,9 @@ namespace NetMQ.Zyre
 
         #region Whisper
 
+        /// <summary>
+        /// Send a multi-part message to a peer
+        /// </summary>
         public class WhisperMessage
         {
             public WhisperMessage()
@@ -244,12 +257,14 @@ namespace NetMQ.Zyre
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field
+            /// Get/Set the Sequence field.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
             /// <summary>
-            /// /// Get/Set the Content NetMQMessage
+            /// Get/Set the Content NetMQMessage.
+            /// Wrapped message content.
             /// </summary>
             public NetMQMessage Content { get; set; }
 
@@ -309,6 +324,9 @@ namespace NetMQ.Zyre
 
         #region Shout
 
+        /// <summary>
+        /// Send a multi-part message to a group
+        /// </summary>
         public class ShoutMessage
         {
             public ShoutMessage()
@@ -323,17 +341,20 @@ namespace NetMQ.Zyre
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field
+            /// Get/Set the Sequence field.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
             /// <summary>
-            /// Get/Set the Group field
+            /// Get/Set the Group field.
+            /// Group to send to.
             /// </summary>
             public string Group { get; set; }
 
             /// <summary>
-            /// /// Get/Set the Content NetMQMessage
+            /// Get/Set the Content NetMQMessage.
+            /// Wrapped message content.
             /// </summary>
             public NetMQMessage Content { get; set; }
 
@@ -402,6 +423,9 @@ namespace NetMQ.Zyre
 
         #region Join
 
+        /// <summary>
+        /// Join a group
+        /// </summary>
         public class JoinMessage
         {
             public JoinMessage()
@@ -415,17 +439,20 @@ namespace NetMQ.Zyre
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field
+            /// Get/Set the Sequence field.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
             /// <summary>
-            /// Get/Set the Group field
+            /// Get/Set the Group field.
+            /// Name of group.
             /// </summary>
             public string Group { get; set; }
 
             /// <summary>
-            /// Get/Set the Status field
+            /// Get/Set the Status field.
+            /// Sender groups status value.
             /// </summary>
             public byte Status { get; set; }
 
@@ -496,6 +523,9 @@ namespace NetMQ.Zyre
 
         #region Leave
 
+        /// <summary>
+        /// Leave a group
+        /// </summary>
         public class LeaveMessage
         {
             public LeaveMessage()
@@ -504,22 +534,25 @@ namespace NetMQ.Zyre
             }
 
             /// <summary>
-            /// Get/Set the Version field
+            /// Get/Set the Version field.
             /// </summary>
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field
+            /// Get/Set the Sequence field.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
             /// <summary>
-            /// Get/Set the Group field
+            /// Get/Set the Group field.
+            /// Name of group.
             /// </summary>
             public string Group { get; set; }
 
             /// <summary>
-            /// Get/Set the Status field
+            /// Get/Set the Status field.
+            /// Sender groups status value.
             /// </summary>
             public byte Status { get; set; }
 
@@ -590,6 +623,9 @@ namespace NetMQ.Zyre
 
         #region Ping
 
+        /// <summary>
+        /// Ping a peer that has gone silent
+        /// </summary>
         public class PingMessage
         {
             public PingMessage()
@@ -598,12 +634,13 @@ namespace NetMQ.Zyre
             }
 
             /// <summary>
-            /// Get/Set the Version field
+            /// Get/Set the Version field.
             /// </summary>
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field
+            /// Get/Set the Sequence field.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
@@ -656,6 +693,9 @@ namespace NetMQ.Zyre
 
         #region PingOk
 
+        /// <summary>
+        /// Reply to a peer's ping
+        /// </summary>
         public class PingOkMessage
         {
             public PingOkMessage()
@@ -664,12 +704,13 @@ namespace NetMQ.Zyre
             }
 
             /// <summary>
-            /// Get/Set the Version field
+            /// Get/Set the Version field.
             /// </summary>
             public byte Version { get; set; }
 
             /// <summary>
-            /// Get/Set the Sequence field
+            /// Get/Set the Sequence field.
+            /// Cyclic sequence number.
             /// </summary>
             public UInt16 Sequence { get; set; }
 
@@ -1433,41 +1474,51 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            var sb = new StringBuilder(Command);
+            var sb = new StringBuilder("[");
+            sb.Append(Command);
             sb.Append(' ');
             switch (Id)
             {
                 case MessageId.Hello:
+                    sb.Append("from ");
                     sb.Append(Hello.Name);
                     sb.Append(" Seq:");
                     sb.Append(Hello.Sequence);
-                    sb.Append(" EndPoint:");
+                    sb.Append(" at EndPoint:");
                     sb.Append(Hello.Endpoint);
                     break;
                 case MessageId.Whisper:
+                    sb.Append("Seq:");
+                    sb.Append(Whisper.Sequence);
+                    break;
                 case MessageId.Shout:
-                    sb.Append(" Seq:");
-                    sb.Append(Hello.Sequence);
+                    sb.Append("Seq:");
+                    sb.Append(Shout.Sequence);
                     break;
                 case MessageId.Join:
-                    sb.Append(" Seq:");
-                    sb.Append(Hello.Sequence);
+                    sb.Append("Seq:");
+                    sb.Append(Join.Sequence);
                     sb.Append(" Group:");
                     sb.Append(Join.Group);
                     break;
                 case MessageId.Leave:
-                    sb.Append(" Seq:");
-                    sb.Append(Hello.Sequence);
+                    sb.Append("Seq:");
+                    sb.Append(Leave.Sequence);
                     sb.Append(" Group:");
                     sb.Append(Leave.Group);
                     break;
                 case MessageId.Ping:
+                    sb.Append("Seq:");
+                    sb.Append(Ping.Sequence);
                     break;
                 case MessageId.PingOk:
+                    sb.Append("Seq:");
+                    sb.Append(PingOk.Sequence);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            sb.Append(']');
             return sb.ToString();
         }
     }

@@ -60,8 +60,8 @@ namespace NetMQ.Zyre.Tests
             var node2Writer = new ConsoleWriter("node2");
 
             // Create two nodes
-            using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite))
-            using (var node2 = new Zyre("node2", node2Writer.ConsoleWrite))
+            using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite, true))
+            using (var node2 = new Zyre("node2", node2Writer.ConsoleWrite, true))
             {
                 int major, minor, patch;
                 node1.Version(out major, out minor, out patch);
@@ -90,14 +90,14 @@ namespace NetMQ.Zyre.Tests
                 Console.WriteLine("After starting node2, Dump():");
                 node2.Dump();
 
+                //  Give time for them to interconnect. Our default is beacons every second
+                Thread.Sleep(1100);
+                Console.WriteLine("After Thread.Sleep(1100):");
+
                 Console.WriteLine("node1 Joining Global");
                 node1.Join("GLOBAL");
                 Console.WriteLine("node2 Joining Global");
                 node2.Join("GLOBAL");
-
-                //  Give time for them to interconnect
-                Thread.Sleep(100);
-                Console.WriteLine("After Thread.Sleep(100):");
                 node1.Dump();
                 node2.Dump();
 

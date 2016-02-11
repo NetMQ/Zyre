@@ -82,7 +82,8 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="name">The name of the node</param>
         /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
-        public Zyre (string name, Action<string> verboseAction = null)
+        /// <param name="verbose">Turn on logging when true</param>
+        public Zyre (string name, Action<string> verboseAction = null, bool verbose = false)
         {
             // Create front-to-back pipe pair for data traffic
             // outbox is passed to ZreNode for sending Zyre message traffic back to _inbox
@@ -91,7 +92,7 @@ namespace NetMQ.Zyre
 
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
-            _actor = ZreNode.Create(outbox, verboseAction);
+            _actor = ZreNode.Create(outbox, verboseAction, verbose);
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))

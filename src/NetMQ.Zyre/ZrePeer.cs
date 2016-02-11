@@ -164,7 +164,7 @@ namespace NetMQ.Zyre
             };
             if (_verbose)
             {
-                _verboseAction(string.Format("({0}) mailbox connecting to peer endPoint={1}, reply-to identity={2}", _origin, _endpoint, replyTo.ToShortString6()));
+                _verboseAction(string.Format("({0}) (identity={1}) DealerSocket mailbox is connecting to peer endPoint={2}, ", _origin, replyTo.ToShortString6(), _endpoint));
             }
             _mailbox.Connect(endpoint);
             _endpoint = endpoint;
@@ -206,7 +206,7 @@ namespace NetMQ.Zyre
                 msg.Sequence = ++_sentSequence;
                 if (_verbose)
                 {
-                    _verboseAction(string.Format("({0}) sending {1} to peer name={2} sequence={3}", _origin, msg.Command, _name, msg.Sequence));
+                    _verboseAction(string.Format("({0}) ZrePeer.Send() sending message={1} from peer={2}", _origin, msg, this));
                 }
                 msg.Send(_mailbox);
             }
@@ -214,7 +214,7 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Return peer connected status
+        /// Return peer connected status. True when connected and peer will send messages.
         /// </summary>
         internal bool Connected
         {
@@ -294,7 +294,7 @@ namespace NetMQ.Zyre
         /// </summary>
         internal void IncrementStatus()
         {
-            _status = _status == UbyteMax ? (byte)0 : ++_status;
+            _status = _status == UbyteMax ? (byte) 0 : ++_status;
         }
 
         /// <summary>
@@ -325,7 +325,7 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Return peer ready state
+        /// Return peer ready state. True when peer has said Hello to us
         /// </summary>
         internal bool Ready
         {
@@ -384,12 +384,7 @@ namespace NetMQ.Zyre
         {
             Debug.Assert(msg != null);
 
-            //  The sequence number set by the peer, and our own calculated
-            //  sequence number should be the same.
-            if (_verbose)
-            {
-                _verboseAction(string.Format("({0}) recv {1} from peer={2} sequence={3}", _origin, msg.Command, _name, msg.Sequence));
-            }
+            //  The sequence number set by the peer and our own calculated sequence number should be the same.
             if (msg.Id == ZreMsg.MessageId.Hello)
             {
                 //  HELLO always MUST have sequence = 1
@@ -397,7 +392,7 @@ namespace NetMQ.Zyre
             }
             else
             {
-                _wantSequence = _wantSequence == UshortMax ? (ushort)0 : ++_wantSequence;
+                _wantSequence = _wantSequence == UshortMax ? (ushort) 0 : ++_wantSequence;
             }
             if (_wantSequence != msg.Sequence)
             {
@@ -424,8 +419,7 @@ namespace NetMQ.Zyre
         {
             var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
             var origin = string.IsNullOrEmpty(_origin) ? "NotSet" : _origin;
-            return string.Format("origin:{0} name:{1} router endpoint:{2} connected:{3} ready:{4} status:{5} guidShort:{6} guid:{7}", 
-                origin, name, _endpoint, _connected, _ready, _status, _uuid.ToShortString6(), _uuid);
+            return string.Format("from [origin:{0} to name:{1} endpoint:{2} connected:{3} ready:{4} status:{5} _sentSeq:{6} _wantSeq:{7} _ guidShort:{8}]", origin, name, _endpoint, _connected, _ready, _status, _sentSequence, _wantSequence, _uuid.ToShortString6());
         }
 
         /// <summary>
