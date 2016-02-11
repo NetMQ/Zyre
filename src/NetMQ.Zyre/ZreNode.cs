@@ -17,7 +17,13 @@ namespace NetMQ.Zyre
         private const byte BeaconVersion = 0x1;
         private const byte UbyteMax = byte.MaxValue;
 
+        /// <summary>
+        /// Lock for the Dump() method so we get all of it at once.
+        /// </summary>
+        private static readonly object DumpLock = new object();
+
         #region Private Variables
+
         /// <summary>
         /// Pipe back to application
         /// ReceiveAPI() receives messages from the API and sends command replies and signals via the pipe
@@ -204,6 +210,10 @@ namespace NetMQ.Zyre
                 return false;
             }
             _endpoint = _inbox.Options.LastEndpoint;
+            if (_verbose)
+            {
+                _verboseAction(string.Format("Beacon for {0} is going out from _inbox bound to {1}", _uuid.ToShortString6(), _endpoint));
+            }
 
             //  Set broadcast/listen beacon
             PublishBeacon(_port);
@@ -264,7 +274,7 @@ namespace NetMQ.Zyre
         /// <param name="uuid">The peer's identity</param>
         /// <param name="port">The peer's port</param>
         /// <returns></returns>
-        private static bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
+        private bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
         {
             uuid = Guid.Empty;
             port = int.MinValue;
@@ -281,7 +291,7 @@ namespace NetMQ.Zyre
             uuid = new Guid(uuidBytes);
             var portBytes = new byte[2];
             Buffer.BlockCopy(bytes, 20, portBytes, 0, 2);
-            port = NetworkOrderBitsConverter.ToInt16(portBytes);
+            port = (bytes[20] << 8) + bytes[21];
             return true;
         }
 
@@ -299,8 +309,8 @@ namespace NetMQ.Zyre
             transmit[3] = BeaconVersion;
             var uuidBytes = _uuid.ToByteArray();
             Buffer.BlockCopy(uuidBytes, 0, transmit, 4, 16);
-            var portBytes = NetworkOrderBitsConverter.GetBytes((short) port);
-            Buffer.BlockCopy(portBytes, 0, transmit, 20, 2);
+            transmit[20] = (byte)((port >> 8) & 255);
+            transmit[21] = (byte)(port & 255);
             return transmit;
         }
 
@@ -580,11 +590,6 @@ namespace NetMQ.Zyre
             {
                 PurgePeer(existingPeer, endpoint);
             }
-            if (_verboseAction != null)
-            {
-                _verboseAction(string.Format("({0}) RequirePeer adding new peer {1}. Sending Hello message with endpoint={2}",
-                    _name, uuid.ToShortString6(), endpoint));
-            }
             peer = ZrePeer.NewPeer(_peers, uuid, _verboseAction);
             peer.SetOrigin(_name);
             peer.SetVerbose(_verbose);
@@ -603,6 +608,10 @@ namespace NetMQ.Zyre
                     Headers = _headers
                 }
             };
+            if (_verboseAction != null)
+            {
+                _verboseAction(string.Format("({0}) RequirePeer created new peer {1}. Sending Hello message={2}",_name, peer, helloMessage));
+            }
             peer.Send(helloMessage);
             return peer;
         }
@@ -702,11 +711,12 @@ namespace NetMQ.Zyre
         {
             Guid uuid;
             var msg = ZreMsg.ReceiveNew(_inbox, out uuid);
-            if (msg == null || uuid == _uuid)
+            if (msg == null)
             {
                 // Ignore a bad message (header or message signature doesn't meet http://rfc.zeromq.org/spec:36)
                 return;
             }
+            Debug.Assert(uuid != _uuid, string.Format("({0}) Our own message should not be coming back to us! {1}", _name, _uuid));
             ZrePeer peer;
             if (!_peers.TryGetValue(uuid, out peer))
             {
@@ -850,15 +860,13 @@ namespace NetMQ.Zyre
             {
                 return;
             }
-            IPAddress bindTo = null; // TODO change this once this property comes thru from NuGet = _beacon.BoundTo;
-            var interfaceCollection = new InterfaceCollection();
-            foreach (var @interface in interfaceCollection)
+            var indexOfColon = peerName.IndexOf(':');
+            var addressWithoutPort = peerName.Substring(0, indexOfColon);
+            var endPoint = string.Format("tcp://{0}:{1}", addressWithoutPort, port);
+            if (_verbose)
             {
-                bindTo = @interface.Address;
-                break;
+                _verboseAction(string.Format("Valid beacon received from {0} at {1}", uuid.ToShortString6(), endPoint));
             }
-            var endPoint = string.Format("tcp://{0}:{1}", bindTo, port);
-
             ZrePeer peer;
             if (port > 0)
             {
@@ -919,29 +927,32 @@ namespace NetMQ.Zyre
                 return;
             }
 
-            _verboseAction("zyre_node: dump state");
-            _verboseAction(string.Format(" - name={0} uuidShort={1} uuid={1}", _name, _uuid.ToShortString6(), _uuid));
-            _verboseAction(string.Format(" - endpoint={0}", _endpoint));
-            _verboseAction(string.Format(" - discovery=beacon port={0} interval={1}", _beaconPort, _interval));
-            _verboseAction(string.Format(" - headers={0}", _headers.Count));
-            foreach (var header in _headers)
+            lock (DumpLock)
             {
-                _verboseAction(string.Format("key={0} value={1}", header.Key, header.Value));
-            }
-            _verboseAction(string.Format(" - peers={0}", _peers.Count));
-            foreach (var peer in _peers.Values)
-            {
-                _verboseAction(string.Format("peer={0}", peer));
-            }
-            _verboseAction(string.Format(" - ownGroups={0}", _ownGroups.Count));
-            foreach (var group in _ownGroups.Values)
-            {
-                _verboseAction(string.Format("ownGroup={0}", group));
-            }
-            _verboseAction(string.Format(" - peerGroups={0}", _peerGroups.Count));
-            foreach (var group in _peerGroups.Values)
-            {
-                _verboseAction(string.Format("peerGroup={0}", group));
+                _verboseAction("zyre_node: dump state");
+                _verboseAction(string.Format(" - name={0} uuidShort={1} uuid={2}", _name, _uuid.ToShortString6(), _uuid));
+                _verboseAction(string.Format(" - endpoint={0}", _endpoint));
+                _verboseAction(string.Format(" - discovery=beacon port={0} interval={1}", _beaconPort, _interval));
+                _verboseAction(string.Format(" - headers={0}", _headers.Count));
+                foreach (var header in _headers)
+                {
+                    _verboseAction(string.Format("key={0} value={1}", header.Key, header.Value));
+                }
+                _verboseAction(string.Format(" - peers={0}", _peers.Count));
+                foreach (var peer in _peers.Values)
+                {
+                    _verboseAction(string.Format("peer={0}", peer));
+                }
+                _verboseAction(string.Format(" - ownGroups={0}", _ownGroups.Count));
+                foreach (var group in _ownGroups.Values)
+                {
+                    _verboseAction(string.Format("ownGroup={0}", group));
+                }
+                _verboseAction(string.Format(" - peerGroups={0}", _peerGroups.Count));
+                foreach (var group in _peerGroups.Values)
+                {
+                    _verboseAction(string.Format("peerGroup={0}", group));
+                }
             }
         }
 

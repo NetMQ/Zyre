@@ -336,7 +336,7 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public List<string> OwnGroups()
         {
-            _actor.SendMoreFrame("OWN GROUPS");
+            _actor.SendFrame("OWN GROUPS");
             var result = Serialization.BinaryDeserialize<List<string>>(_actor.ReceiveFrameBytes());
             return result;
         }
@@ -347,8 +347,9 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         public List<string> PeerGroups()
         {
-            _actor.SendMoreFrame("PEER GROUPS");
-            var result = Serialization.BinaryDeserialize<List<string>>(_actor.ReceiveFrameBytes());
+            _actor.SendFrame("PEER GROUPS");
+            var bytes = _actor.ReceiveFrameBytes();
+            var result = Serialization.BinaryDeserialize<List<string>>(bytes);
             return result;
         }
 

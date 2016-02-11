@@ -1468,7 +1468,7 @@ namespace NetMQ.Zyre
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            return Command;
+            return sb.ToString();
         }
     }
 }
