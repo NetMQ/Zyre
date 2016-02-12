@@ -1012,7 +1012,8 @@ namespace NetMQ.Zyre
         /// Send the ZreMsg to the socket.
         /// Warning re WHISPER and SHOUT: The 0MQ spec http://rfc.zeromq.org/spec:36 
         ///     says "message content defined as one 0MQ frame. ZRE does not support multi-frame message contents."
-        ///     But this C# implementation allows multi-frame contents.
+        /// 	...on the other hand, it appears that zeromq/zyre also supports multi-frame contents, as per the top of zyre.c
+        ///     This C# implementation allows multi-frame contents.
         /// </summary>
         public void Send(IOutgoingSocket output)
         {
@@ -1157,7 +1158,8 @@ namespace NetMQ.Zyre
         /// Send a Whisper message to the socket
         /// Warning re WHISPER and SHOUT: The 0MQ spec http://rfc.zeromq.org/spec:36 
         ///     says "message content defined as one 0MQ frame. ZRE does not support multi-frame message contents."
-        ///     But this C# implementation allows multi-frame contents.
+        /// 	...on the other hand, it appears that zeromq/zyre also supports multi-frame contents, as per the top of zyre.c
+        ///     This C# implementation allows multi-frame contents.
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="sequence"></param>
@@ -1181,7 +1183,8 @@ namespace NetMQ.Zyre
         /// Send a Shout message to the socket
         /// Warning re WHISPER and SHOUT: The 0MQ spec http://rfc.zeromq.org/spec:36 
         ///     says "message content defined as one 0MQ frame. ZRE does not support multi-frame message contents."
-        ///     But this C# implementation allows multi-frame contents.
+        /// 	...on the other hand, it appears that zeromq/zyre also supports multi-frame contents, as per the top of zyre.c
+        ///     This C# implementation allows multi-frame contents.
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="sequence"></param>

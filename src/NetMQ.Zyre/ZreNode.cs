@@ -646,7 +646,7 @@ namespace NetMQ.Zyre
             group.Join(peer);
 
             // Now tell the caller about the peer joined group
-            _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(_name);
+            _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(groupName);
             _loggerDelegate?.Invoke($"({_name} JOIN name={peer.Name} group={groupName}");
            return group;
         }
@@ -663,7 +663,7 @@ namespace NetMQ.Zyre
             group.Leave(peer);
 
             // Now tell the caller about the peer left group
-            _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(_name);
+            _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(groupName);
             _loggerDelegate?.Invoke($"({_name} LEAVE name={peer.Name} group={groupName}");
             return group;
         }
@@ -930,27 +930,11 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            if (_outbox != null)
-            {
-                _outbox.Dispose();
-                _outbox = null;
-            }
-            if (_poller != null)
-            {
-                _poller.Stop();
-                _poller.Dispose();
-                _poller = null;
-            }
-            if (_beacon != null)
-            {
-                _beacon.Dispose();
-                _beacon = null;
-            }
-            if (_inbox != null)
-            {
-                _inbox.Dispose();
-                _inbox = null;
-            }
+            _outbox?.Dispose();
+            _poller?.Stop();
+            _poller?.Dispose();
+            _beacon?.Dispose();
+            _inbox?.Dispose();
             foreach (var peer in _peers.Values)
             {
                 peer.Destroy();

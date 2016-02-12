@@ -95,6 +95,15 @@
     <Compile Include="ZreNode.cs" />
     <Compile Include="ZrePeer.cs" />
     <Compile Include="Zyre.cs" />
+    <Compile Include="ZyreEvents\ZyreEventEvasive.cs" />
+    <Compile Include="ZyreEvents\ZyreEventStop.cs" />
+    <Compile Include="ZyreEvents\ZyreEventLeave.cs" />
+    <Compile Include="ZyreEvents\ZyreEventJoin.cs" />
+    <Compile Include="ZyreEvents\ZyreEventShout.cs" />
+    <Compile Include="ZyreEvents\ZyreEventExit.cs" />
+    <Compile Include="ZyreEvents\ZyreEventWhisper.cs" />
+    <Compile Include="ZyreEvents\ZyreEventEnter.cs" />
+    <Compile Include="ZyreEvents\ZyreEventHeader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

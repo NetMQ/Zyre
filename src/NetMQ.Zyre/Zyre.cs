@@ -5,40 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using NetMQ.Sockets;
-
-/*
-    Zyre does local area discovery and clustering. A Zyre node broadcasts
-    UDP beacons, and connects to peers that it finds. This class wraps a
-    Zyre node with a message-based API.
-
-    All incoming events are zmsg_t messages delivered via the zyre_recv
-    call. The first frame defines the type of the message, and following
-    frames provide further values:
-
-        ENTER fromnode name headers ipaddress:port
-            a new peer has entered the network
-        EVASIVE fromnode name
-	        a peer is being evasive (quiet for too long)
-	    EXIT fromnode name
-            a peer has left the network
-        JOIN fromnode name groupname
-            a peer has joined a specific group
-        LEAVE fromnode name groupname
-            a peer has joined a specific group
-        WHISPER fromnode name message
-            a peer has sent this node a message
-        SHOUT fromnode name groupname message
-            a peer has sent one of our groups a message
-
-    In SHOUT and WHISPER the message is zero or more frames, and can hold
-    any ZeroMQ message. In ENTER, the headers frame contains a packed
-    dictionary, see zhash_pack/unpack.
-
-    To join or leave a group, use the zyre_join and zyre_leave methods.
-    To set a header value, use the zyre_set_header method. To send a message
-    to a single peer, use zyre_whisper. To send a message to a group, use
-    zyre_shout.
-*/
+using NetMQ.Zyre.ZyreEvents;
 
 namespace NetMQ.Zyre
 {
@@ -55,12 +22,12 @@ namespace NetMQ.Zyre
         /// A Zyre instance wraps the actor instance
         /// All node control is done through _actor
         /// </summary>
-        private NetMQActor _actor;
+        private readonly NetMQActor _actor;
 
         /// <summary>
         /// Receives incoming cluster traffic (traffic into Zyre from the network)
         /// </summary>
-        private PairSocket _inbox;
+        private readonly PairSocket _inbox;
 
         /// <summary>
         /// Copy of node UUID
@@ -77,6 +44,9 @@ namespace NetMQ.Zyre
         /// </summary>
         private string _endpoint;
 
+        private readonly NetMQPoller _inboxPoller
+            ;
+
         /// <summary>
         /// Create a Zyre API that communicates with a node on the ZRE bus.
         /// </summary>
@@ -92,6 +62,9 @@ namespace NetMQ.Zyre
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
             _actor = ZreNode.Create(outbox, loggerDelegate);
+            _inboxPoller = new NetMQPoller {_inbox};
+            _inbox.ReceiveReady += InboxReceiveReady;
+            _inboxPoller.RunAsync();
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
@@ -353,10 +326,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public PairSocket Socket
         {
-            get
-            {
-                return _inbox;
-            }
+            get { return _inbox; }
         }
 
         /// <summary>
@@ -376,6 +346,125 @@ namespace NetMQ.Zyre
         {
             _actor.SendFrame("DUMP");
         }
+
+        #region ZyreEvents
+        // These events offer similar functionality to zeromq/zyre/zyre_event.c
+
+        /// <summary>
+        /// This receives a message relayed by ZreNode.ReceivePeer()
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void InboxReceiveReady(object sender, NetMQSocketEventArgs e)
+        {
+            var msg = Receive();
+            var msgType = msg.Pop().ConvertToString();
+            var senderBytes = msg.Pop().Buffer;
+            Debug.Assert(senderBytes.Length == 16);
+            var senderUuid = new Guid(senderBytes);
+            var name = msg.Pop().ConvertToString();
+            string groupName;
+            switch (msgType)
+            {
+                case "ENTER":
+                    var headersBuffer = msg.Pop().Buffer;
+                    var headers = Serialization.BinaryDeserialize<Dictionary<string, string>>(headersBuffer);
+                    var address = msg.Pop().ConvertToString();
+                    var enterEvent = new ZyreEventEnter(senderUuid, name, headers, address);
+                    OnEnterEvent(enterEvent);
+                    break;
+                case "WHISPER":
+                    var whisperEvent = new ZyreEventWhisper(senderUuid, name, msg);
+                    OnWhisperEvent(whisperEvent);
+                    break;
+                case "SHOUT":
+                    groupName = msg.Pop().ConvertToString();
+                    var shoutEvent = new ZyreEventShout(senderUuid, name, groupName, msg);
+                    OnShoutEvent(shoutEvent);
+                    break;
+                case "JOIN":
+                    groupName = msg.Pop().ConvertToString();
+                    var joinEvent = new ZyreEventJoin(senderUuid, name, groupName);
+                    OnJoinEvent(joinEvent);
+                    break;
+                case "LEAVE":
+                    groupName = msg.Pop().ConvertToString();
+                    var leaveEvent = new ZyreEventLeave(senderUuid, name, groupName);
+                    OnLeaveEvent(leaveEvent);
+                    break;
+                case "EXIT":
+                    OnExitEvent(new ZyreEventExit(senderUuid, name));
+                    break;
+                case "STOP":
+                    OnStopEvent(new ZyreEventStop(senderUuid, name));
+                    break;
+                case "EVASIVE":
+                    OnEvasiveEvent(new ZyreEventEvasive(senderUuid, name));
+                    break;
+                default:
+                    throw new ArgumentException(msgType);
+            }
+        }
+
+        public event EventHandler<ZyreEventEnter> EnterEvent;
+        public event EventHandler<ZyreEventWhisper> WhisperEvent;
+        public event EventHandler<ZyreEventShout> ShoutEvent;
+        public event EventHandler<ZyreEventJoin> JoinEvent;
+        public event EventHandler<ZyreEventLeave> LeaveEvent;
+        public event EventHandler<ZyreEventExit> ExitEvent;
+        public event EventHandler<ZyreEventStop> StopEvent;
+        public event EventHandler<ZyreEventEvasive> EvasiveEvent;
+
+        private void OnEvasiveEvent(ZyreEventEvasive evasiveEvent)
+        {
+            var temp = EvasiveEvent; // for thread safety
+            temp?.Invoke(this, evasiveEvent);
+        }
+
+        private void OnExitEvent(ZyreEventExit exitEvent)
+        {
+            var temp = ExitEvent; // for thread safety
+            temp?.Invoke(this, exitEvent);
+        }
+
+        private void OnStopEvent(ZyreEventStop stopEvent)
+        {
+            var temp = StopEvent; // for thread safety
+            temp?.Invoke(this, stopEvent);
+        }
+
+        private void OnJoinEvent(ZyreEventJoin joinEvent)
+        {
+            var temp = JoinEvent; // for thread safety
+            temp?.Invoke(this, joinEvent);
+        }
+
+        private void OnLeaveEvent(ZyreEventLeave leaveEvent)
+        {
+            var temp = LeaveEvent; // for thread safety
+            temp?.Invoke(this, leaveEvent);
+        }
+
+        private void OnEnterEvent(ZyreEventEnter enterEvent)
+        {
+            var temp = EnterEvent; // for thread safety
+            temp?.Invoke(this, enterEvent);
+        }
+
+        private void OnWhisperEvent(ZyreEventWhisper whisperEvent)
+        {
+            var temp = WhisperEvent; // for thread safety
+            temp?.Invoke(this, whisperEvent);
+        }
+
+        private void OnShoutEvent(ZyreEventShout shoutEvent)
+        {
+            var temp = ShoutEvent; // for thread safety
+            temp?.Invoke(this, shoutEvent);
+        }
+
+        #endregion ZyreEvents
+
 
         public override string ToString()
         {
@@ -400,16 +489,9 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            if (_actor != null)
-            {
-                _actor.Dispose();
-                _actor = null;
-            }
-            if (_inbox != null)
-            {
-                _inbox.Dispose();
-                _inbox = null;
-            }
+            _inboxPoller?.StopAsync();
+            _actor?.Dispose();
+            _inbox?.Dispose();
         }
     }
 }

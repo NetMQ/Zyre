@@ -53,7 +53,7 @@ namespace NetMQ.Zyre.Tests
         /// except it uses gossip, which we don't support
         /// </summary>
         [Test]
-        public void FullTestLikeC()
+        public void FullTestLikeZeroMqZyre()
         {
             var node1Writer = new ConsoleLogger("node1");
             var node2Writer = new ConsoleLogger("node2");

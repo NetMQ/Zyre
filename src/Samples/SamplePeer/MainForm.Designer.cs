@@ -29,11 +29,11 @@
         private void InitializeComponent()
         {
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-            this.splitContainerLogging = new System.Windows.Forms.SplitContainer();
-            this.btnStart = new System.Windows.Forms.Button();
             this.btnStop = new System.Windows.Forms.Button();
-            this.rtbNodeLog = new System.Windows.Forms.RichTextBox();
+            this.btnStart = new System.Windows.Forms.Button();
+            this.splitContainerLogging = new System.Windows.Forms.SplitContainer();
             this.rtbEventsLog = new System.Windows.Forms.RichTextBox();
+            this.rtbNodeLog = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
             this.splitContainerMain.Panel1.SuspendLayout();
             this.splitContainerMain.Panel2.SuspendLayout();
@@ -63,6 +63,26 @@
             this.splitContainerMain.SplitterDistance = 306;
             this.splitContainerMain.TabIndex = 0;
             // 
+            // btnStop
+            // 
+            this.btnStop.Location = new System.Drawing.Point(12, 41);
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(75, 23);
+            this.btnStop.TabIndex = 1;
+            this.btnStop.Text = "Stop";
+            this.btnStop.UseVisualStyleBackColor = true;
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            // 
+            // btnStart
+            // 
+            this.btnStart.Location = new System.Drawing.Point(12, 12);
+            this.btnStart.Name = "btnStart";
+            this.btnStart.Size = new System.Drawing.Size(75, 23);
+            this.btnStart.TabIndex = 0;
+            this.btnStart.Text = "Start";
+            this.btnStart.UseVisualStyleBackColor = true;
+            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
+            // 
             // splitContainerLogging
             // 
             this.splitContainerLogging.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -81,23 +101,14 @@
             this.splitContainerLogging.SplitterDistance = 123;
             this.splitContainerLogging.TabIndex = 0;
             // 
-            // btnStart
+            // rtbEventsLog
             // 
-            this.btnStart.Location = new System.Drawing.Point(12, 12);
-            this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(75, 23);
-            this.btnStart.TabIndex = 0;
-            this.btnStart.Text = "Start";
-            this.btnStart.UseVisualStyleBackColor = true;
-            // 
-            // btnStop
-            // 
-            this.btnStop.Location = new System.Drawing.Point(12, 41);
-            this.btnStop.Name = "btnStop";
-            this.btnStop.Size = new System.Drawing.Size(75, 23);
-            this.btnStop.TabIndex = 1;
-            this.btnStop.Text = "Stop";
-            this.btnStop.UseVisualStyleBackColor = true;
+            this.rtbEventsLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rtbEventsLog.Location = new System.Drawing.Point(0, 0);
+            this.rtbEventsLog.Name = "rtbEventsLog";
+            this.rtbEventsLog.Size = new System.Drawing.Size(778, 123);
+            this.rtbEventsLog.TabIndex = 0;
+            this.rtbEventsLog.Text = "";
             // 
             // rtbNodeLog
             // 
@@ -107,15 +118,6 @@
             this.rtbNodeLog.Size = new System.Drawing.Size(778, 141);
             this.rtbNodeLog.TabIndex = 0;
             this.rtbNodeLog.Text = "";
-            // 
-            // rtbEventsLog
-            // 
-            this.rtbEventsLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rtbEventsLog.Location = new System.Drawing.Point(0, 0);
-            this.rtbEventsLog.Name = "rtbEventsLog";
-            this.rtbEventsLog.Size = new System.Drawing.Size(778, 123);
-            this.rtbEventsLog.TabIndex = 0;
-            this.rtbEventsLog.Text = "";
             // 
             // MainForm
             // 

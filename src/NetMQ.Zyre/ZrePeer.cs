@@ -26,16 +26,6 @@ namespace NetMQ.Zyre
         private DealerSocket _mailbox;
 
         /// <summary>
-        /// Identity guid of the peer, 16 bytes
-        /// </summary>
-        private readonly Guid _uuid;
-
-        /// <summary>
-        /// Endpoint of the peer connected to
-        /// </summary>
-        private string _endpoint;
-
-        /// <summary>
         /// Peer's internal name
         /// </summary>
         private string _name;
@@ -54,11 +44,6 @@ namespace NetMQ.Zyre
         /// Peer has expired by now
         /// </summary>
         private long _expiredAt;
-
-        /// <summary>
-        /// Peer will send messages
-        /// </summary>
-        private bool _connected;
 
         /// <summary>
         /// Peer has said Hello to us
@@ -95,10 +80,10 @@ namespace NetMQ.Zyre
 
         private ZrePeer(Guid uuid, Action<string> loggerDelegate = null)
         {
-            _uuid = uuid;
+            Uuid = uuid;
             _loggerDelegate = loggerDelegate;
             _ready = false;
-            _connected = false;
+            Connected = false;
             _sentSequence = 0;
             _wantSequence = 0;
             _headers = new Dictionary<string, string>();
@@ -136,7 +121,7 @@ namespace NetMQ.Zyre
         /// <param name="endpoint"></param>
         internal void Connect(Guid replyTo, string endpoint)
         {
-            Debug.Assert(!_connected);
+            Debug.Assert(!Connected);
 
             //  Create new outgoing socket (drop any messages in transit)
             _mailbox = new DealerSocket(endpoint) // default action is to connect to the peer node
@@ -157,10 +142,10 @@ namespace NetMQ.Zyre
                     // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses TrySend() with TimeSpan.Zero
                 }
             };
-            _loggerDelegate?.Invoke($"({_origin}) (identity={replyTo.ToShortString6()}) DealerSocket mailbox is connecting to peer endPoint={_endpoint}, ");
+            _loggerDelegate?.Invoke($"({_origin}) (identity={replyTo.ToShortString6()}) DealerSocket mailbox is connecting to peer endPoint={Endpoint}, ");
             _mailbox.Connect(endpoint);
-            _endpoint = endpoint;
-            _connected = true;
+            Endpoint = endpoint;
+            Connected = true;
             _ready = false;
         }
 
@@ -181,8 +166,8 @@ namespace NetMQ.Zyre
         {
             _mailbox.Dispose();
             _mailbox = null;
-            _endpoint = null;
-            _connected = false;
+            Endpoint = null;
+            Connected = false;
             _ready = false;
         }
 
@@ -193,7 +178,7 @@ namespace NetMQ.Zyre
         /// <returns>always true</returns>
         internal bool Send(ZreMsg msg)
         {
-            if (_connected)
+            if (Connected)
             {
                 msg.Sequence = ++_sentSequence;
                 _loggerDelegate?.Invoke($"({_origin}) ZrePeer.Send() sending message={msg} from peer={this}");
@@ -205,26 +190,17 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer connected status. True when connected and peer will send messages.
         /// </summary>
-        internal bool Connected
-        {
-            get { return _connected; }
-        }
+        internal bool Connected { get; private set; }
 
         /// <summary>
-        /// Return peer identity string
+        /// Identity guid of the peer, 16 bytes
         /// </summary>
-        internal Guid Uuid
-        {
-            get { return _uuid; }
-        }
+        internal Guid Uuid { get; }
 
         /// <summary>
-        /// Return peer connection endpoint
+        /// Return peer connection endpoint. (The RouterSocket address listening to messages from this peer.)
         /// </summary>
-        internal string Endpoint
-        {
-            get { return _endpoint; }
-        }
+        internal string Endpoint { get; private set; }
 
         /// <summary>
         /// Register activity at peer
@@ -399,7 +375,7 @@ namespace NetMQ.Zyre
             var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
             var origin = string.IsNullOrEmpty(_origin) ? "NotSet" : _origin;
             return
-                $"from [origin:{origin} to name:{name} endpoint:{_endpoint} connected:{_connected} ready:{_ready} status:{_status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{_uuid.ToShortString6()}]";
+                $"from [origin:{origin} to name:{name} endpoint:{Endpoint} connected:{Connected} ready:{_ready} status:{_status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{Uuid.ToShortString6()}]";
         }
 
         /// <summary>
@@ -420,11 +396,7 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            if (_mailbox != null)
-            {
-                _mailbox.Dispose();
-                _mailbox = null;
-            }
+            _mailbox?.Dispose();
         }
     }
 }
