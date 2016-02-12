@@ -188,24 +188,16 @@ namespace NetMQ.Zyre
             // listen to incoming beacons
             _beacon.ReceiveReady += OnBeaconReady;
 
-            IPAddress bindTo = null; // TODO change this once this property comes thru from NuGet = _beacon.BoundTo;
-            var interfaceCollection = new InterfaceCollection();
-            foreach (var @interface in interfaceCollection)
-            {
-                    bindTo = @interface.Address;
-                    break;
-            }
-
             // Bind our router port to the host
-            var address = $"tcp://{bindTo}";
+            var address = $"tcp://{_beacon.BoundTo}";
             _port = _inbox.BindRandomPort(address);
             if (_port <= 0)
             {
                 // Die on bad interface or port exhaustion
                 return false;
             }
-            _endpoint = _inbox.Options.LastEndpoint;
-            _loggerDelegate?.Invoke($"Beacon for {_uuid.ToShortString6()} is going out from _inbox that is bound to {_endpoint}");
+            _endpoint = $"{address}:{_port}";
+            _loggerDelegate?.Invoke($"Beacon for {_uuid.ToShortString6()} is going out. The _inbox RouterSocket is bound to _endpoint={_endpoint}");
 
             //  Set broadcast/listen beacon
             PublishBeacon(_port);
@@ -607,7 +599,7 @@ namespace NetMQ.Zyre
         private void RemovePeer(ZrePeer peer)
         {
             // Tell the calling application the peer has gone
-            _outbox.SendMoreFrame("EXIT").SendMoreFrame(peer.Uuid.ToString()).SendFrame(peer.Name);
+            _outbox.SendMoreFrame("EXIT").SendMoreFrame(peer.Uuid.ToByteArray()).SendFrame(peer.Name);
             _loggerDelegate?.Invoke($"({_name} EXIT name={peer.Name} endpoint={peer.Endpoint}");
 
             // Remove peer from any groups we've got it in
@@ -812,19 +804,16 @@ namespace NetMQ.Zyre
         private void ReceiveBeacon()
         {
             // Get IP address and beacon of peer
-            string peerName;
-            var bytes = _beacon.Receive(out peerName);
+            var beaconMessage = _beacon.Receive();
 
             // Ignore anything that isn't a valid beacon
             int port;
             Guid uuid;
-            if (!IsValidBeacon(bytes, out uuid, out port))
+            if (!IsValidBeacon(beaconMessage.Bytes, out uuid, out port))
             {
                 return;
             }
-            var indexOfColon = peerName.IndexOf(':');
-            var addressWithoutPort = peerName.Substring(0, indexOfColon);
-            var endPoint = $"tcp://{addressWithoutPort}:{port}";
+            var endPoint = $"tcp://{beaconMessage.PeerHost}:{port}";
             ZrePeer peer;
             if (port > 0)
             {
