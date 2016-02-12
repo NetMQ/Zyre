@@ -489,7 +489,9 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
+            Stop();
             _inboxPoller?.StopAsync();
+            _inboxPoller?.Dispose();
             _actor?.Dispose();
             _inbox?.Dispose();
         }

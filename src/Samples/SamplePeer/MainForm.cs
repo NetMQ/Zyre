@@ -21,6 +21,7 @@ namespace SamplePeer
         {
             _name = name;
             InitializeComponent();
+            btnStop.Enabled = false;
             var logger = new ConsoleLogger(_name);
             _zyre = new Zyre(_name, logger.ConsoleWrite);
             _zyre.EnterEvent += ZyreEnterEvent;
@@ -59,11 +60,15 @@ namespace SamplePeer
 
         private void btnStart_Click(object sender, EventArgs e)
         {
+            btnStart.Enabled = false;
+            btnStop.Enabled = true;
             _zyre.Start();
         }
 
         private void btnStop_Click(object sender, EventArgs e)
         {
+            btnStop.Enabled = false;
+            btnStart.Enabled = true;
             _zyre.Stop();
         }
     }

@@ -174,12 +174,12 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Start node. Use beacon discovery
         /// </summary>
-        /// <returns>true if OK, false if not possible</returns>
+        /// <returns>true if OK, false if not possible or if already running</returns>
         private bool Start()
         {
             if (_isRunning)
             {
-                throw new InvalidOperationException("ZreNode is already running");
+                return false;
             }
             Debug.Assert(_beacon == null);
             _beacon = new NetMQBeacon();
@@ -237,13 +237,14 @@ namespace NetMQ.Zyre
         {
             if (!_isRunning)
             {
-                throw new InvalidOperationException("ZreNode is not running");
+                return;
             }
             // Stop broadcast/listen beacon
             PublishBeacon(0);
-            Thread.Sleep(1); // Allow 1 msec for beacon to go out
+            Thread.Sleep(1); // Allow 1 millisecond for beacon to go out
             _beacon.ReceiveReady -= OnBeaconReady;
             _poller.Remove(_beacon);
+            _beacon.Dispose();
             _beacon = null;
 
             // Stop polling on inbox
@@ -253,7 +254,7 @@ namespace NetMQ.Zyre
             // Tell the application we are stopping
             var msg = new NetMQMessage(3);
             msg.Append("STOP");
-            msg.Append(_uuid.ToString());
+            msg.Append(_uuid.ToByteArray());
             msg.Append(_name);
             _outbox.TrySendMultipartMessage(TimeSpan.Zero, msg);
             _isRunning = false;
@@ -930,11 +931,15 @@ namespace NetMQ.Zyre
             if (!disposing)
                 return;
 
-            _outbox?.Dispose();
+            if (_isRunning)
+            {
+                Stop();
+            }
             _poller?.Stop();
             _poller?.Dispose();
             _beacon?.Dispose();
             _inbox?.Dispose();
+            _outbox?.Dispose();
             foreach (var peer in _peers.Values)
             {
                 peer.Destroy();
