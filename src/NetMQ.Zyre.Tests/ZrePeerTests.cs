@@ -26,8 +26,6 @@ namespace NetMQ.Zyre.Tests
             var you = Guid.NewGuid();
             using (var peer = ZrePeer.NewPeer(peers, you, ConsoleWrite))
             {
-                peer.SetVerbose(true);
-                peer.SetOrigin("OriginPeerMe");
                 using (var mailbox = new RouterSocket("tcp://127.0.0.1:5551")) // RouterSocket default action binds to the address
                 {
                     peer.Connected.Should().BeFalse();

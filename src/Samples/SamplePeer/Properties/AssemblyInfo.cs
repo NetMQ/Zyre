@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NetMQ.Zyre")]
-[assembly: AssemblyDescription("C# implementation of ZeroMQ Realtime Exchange Protocol")]
+[assembly: AssemblyTitle("SamplePeer")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("NetMQ.Zyre")]
-[assembly: AssemblyProduct("NetMQ.Zyre")]
-[assembly: AssemblyCopyright("Copyright © 2016 Dale Brubaker and Contributors")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("SamplePeer")]
+[assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("4d648749-20a6-4a53-a313-f67da1ba712e")]
+[assembly: Guid("06c728a8-6861-42bb-8567-1397d61a6fc2")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -34,6 +34,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-
-[assembly: InternalsVisibleTo("NetMQ.Zyre.Tests")]
-

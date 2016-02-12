@@ -8,11 +8,11 @@ namespace NetMQ.Zyre.Tests
     [TestFixture]
     public class ZreZyreTest
     {
-        private class ConsoleWriter
+        private class ConsoleLogger
         {
             private readonly string _nodeName;
 
-            public ConsoleWriter(string nodeName)
+            public ConsoleLogger(string nodeName)
             {
                 _nodeName = nodeName;
             }
@@ -27,7 +27,7 @@ namespace NetMQ.Zyre.Tests
         [Test]
         public void SimpleStartStopOneNode()
         {
-            var node1Writer = new ConsoleWriter("node1");
+            var node1Writer = new ConsoleLogger("node1");
             using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite))
             {
                 node1.Start();
@@ -55,8 +55,8 @@ namespace NetMQ.Zyre.Tests
         [Test]
         public void FullTestLikeC()
         {
-            var node1Writer = new ConsoleWriter("node1");
-            var node2Writer = new ConsoleWriter("node2");
+            var node1Writer = new ConsoleLogger("node1");
+            var node2Writer = new ConsoleLogger("node2");
 
             // Create two nodes
             using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite))
