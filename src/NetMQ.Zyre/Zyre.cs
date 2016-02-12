@@ -62,7 +62,7 @@ namespace NetMQ.Zyre
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
             _actor = ZreNode.Create(outbox, loggerDelegate);
-            _inboxPoller = new NetMQPoller {_inbox};
+            _inboxPoller = new NetMQPoller();
             _inbox.ReceiveReady += InboxReceiveReady;
             _inboxPoller.RunAsync();
 
@@ -173,6 +173,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Start()
         {
+            _inboxPoller.Add(_inbox);
             _actor.SendFrame("START");
         }
 
@@ -183,6 +184,7 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Stop()
         {
+            _inboxPoller.Remove(_inbox);
             _actor.SendFrame("STOP");
         }
 
@@ -358,6 +360,10 @@ namespace NetMQ.Zyre
         private void InboxReceiveReady(object sender, NetMQSocketEventArgs e)
         {
             var msg = Receive();
+            if (msg.FrameCount == 0)
+            {
+                return;
+            }
             var msgType = msg.Pop().ConvertToString();
             var senderBytes = msg.Pop().Buffer;
             Debug.Assert(senderBytes.Length == 16);
