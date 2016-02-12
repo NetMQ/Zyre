@@ -34,7 +34,6 @@ namespace NetMQ.Zyre.Tests
                 node1.Should().NotBeNull();
                 node1.Name().Should().Be("node1");
                 node1.SetHeader("X-HELLO", "World");
-                node1.SetVerbose();
                 var uuid1 = node1.Uuid;
                 uuid1.Should().NotBeEmpty();
                 Thread.Sleep(100);
@@ -60,8 +59,8 @@ namespace NetMQ.Zyre.Tests
             var node2Writer = new ConsoleWriter("node2");
 
             // Create two nodes
-            using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite, true))
-            using (var node2 = new Zyre("node2", node2Writer.ConsoleWrite, true))
+            using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite))
+            using (var node2 = new Zyre("node2", node2Writer.ConsoleWrite))
             {
                 int major, minor, patch;
                 node1.Version(out major, out minor, out patch);
@@ -71,7 +70,6 @@ namespace NetMQ.Zyre.Tests
                 node1.Name().Should().Be("node1");
 
                 node1.SetHeader("X-HELLO", "World");
-                node1.SetVerbose();
 
                 // Start both nodes
                 node1.Start();
@@ -83,7 +81,6 @@ namespace NetMQ.Zyre.Tests
                 node2.Should().NotBeNull();
                 node2.Name().Should().Be("node2");
 
-                node2.SetVerbose();
                 node2.Start();
                 var uuid2 = node2.Uuid;
                 uuid1.Should().NotBe(uuid2);

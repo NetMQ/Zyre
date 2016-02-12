@@ -86,22 +86,17 @@ namespace NetMQ.Zyre
         private Dictionary<string, string> _headers;
 
         /// <summary>
-        /// Do we log traffic and failures?
+        /// Optional logger action passed into ctor
         /// </summary>
-        private bool _verbose;
-
-        /// <summary>
-        /// The action to take when _verbose is true.
-        /// </summary>
-        private readonly Action<string> _verboseAction;
+        private readonly Action<string> _loggerDelegate;
 
         #endregion Private Variables
 
 
-        private ZrePeer(Guid uuid, Action<string> verboseAction = null)
+        private ZrePeer(Guid uuid, Action<string> loggerDelegate = null)
         {
             _uuid = uuid;
-            _verboseAction = verboseAction;
+            _loggerDelegate = loggerDelegate;
             _ready = false;
             _connected = false;
             _sentSequence = 0;
@@ -162,10 +157,7 @@ namespace NetMQ.Zyre
                     // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses TrySend() with TimeSpan.Zero
                 }
             };
-            if (_verbose)
-            {
-                _verboseAction(string.Format("({0}) (identity={1}) DealerSocket mailbox is connecting to peer endPoint={2}, ", _origin, replyTo.ToShortString6(), _endpoint));
-            }
+            _loggerDelegate?.Invoke($"({_origin}) (identity={replyTo.ToShortString6()}) DealerSocket mailbox is connecting to peer endPoint={_endpoint}, ");
             _mailbox.Connect(endpoint);
             _endpoint = endpoint;
             _connected = true;
@@ -204,10 +196,7 @@ namespace NetMQ.Zyre
             if (_connected)
             {
                 msg.Sequence = ++_sentSequence;
-                if (_verbose)
-                {
-                    _verboseAction(string.Format("({0}) ZrePeer.Send() sending message={1} from peer={2}", _origin, msg, this));
-                }
+                _loggerDelegate?.Invoke($"({_origin}) ZrePeer.Send() sending message={msg} from peer={this}");
                 msg.Send(_mailbox);
             }
             return true;
@@ -396,30 +385,21 @@ namespace NetMQ.Zyre
             }
             if (_wantSequence != msg.Sequence)
             {
-                if (_verboseAction != null)
+                if (_loggerDelegate != null)
                 {
-                    _verboseAction(string.Format("({0}) seq error from peer={1} expect={2}, got={3}", _origin, _name, _wantSequence, msg.Sequence));
+                    _loggerDelegate($"({_origin}) seq error from peer={_name} expect={_wantSequence}, got={msg.Sequence}");
                 }
                 return true;
             }
             return false;
         }
 
-        /// <summary>
-        /// Ask peer to log all traffic via _verboseAction passed into the constructor
-        /// Ignored (verbose is always false) if _verboseAction is null
-        /// </summary>
-        /// <param name="verbose">true means log all traffic</param>
-        internal void SetVerbose(bool verbose)
-        {
-            _verbose = _verboseAction != null && verbose;
-        }
-
         public override string ToString()
         {
             var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
             var origin = string.IsNullOrEmpty(_origin) ? "NotSet" : _origin;
-            return string.Format("from [origin:{0} to name:{1} endpoint:{2} connected:{3} ready:{4} status:{5} _sentSeq:{6} _wantSeq:{7} _ guidShort:{8}]", origin, name, _endpoint, _connected, _ready, _status, _sentSequence, _wantSequence, _uuid.ToShortString6());
+            return
+                $"from [origin:{origin} to name:{name} endpoint:{_endpoint} connected:{_connected} ready:{_ready} status:{_status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{_uuid.ToShortString6()}]";
         }
 
         /// <summary>

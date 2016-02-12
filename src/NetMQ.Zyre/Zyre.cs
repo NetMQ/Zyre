@@ -81,9 +81,8 @@ namespace NetMQ.Zyre
         /// Create a Zyre API that communicates with a node on the ZRE bus.
         /// </summary>
         /// <param name="name">The name of the node</param>
-        /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
-        /// <param name="verbose">Turn on logging when true</param>
-        public Zyre (string name, Action<string> verboseAction = null, bool verbose = false)
+        /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
+        public Zyre (string name, Action<string> loggerDelegate = null)
         {
             // Create front-to-back pipe pair for data traffic
             // outbox is passed to ZreNode for sending Zyre message traffic back to _inbox
@@ -92,7 +91,7 @@ namespace NetMQ.Zyre
 
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
-            _actor = ZreNode.Create(outbox, verboseAction, verbose);
+            _actor = ZreNode.Create(outbox, loggerDelegate);
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
@@ -159,11 +158,6 @@ namespace NetMQ.Zyre
         {
             var value = string.Format(format, args);
             _actor.SendMoreFrame("SET HEADER").SendMoreFrame(key).SendFrame(value);
-        }
-
-        public void SetVerbose()
-        {
-            _actor.SendFrame("SET VERBOSE");
         }
 
         /// <summary>
@@ -385,7 +379,7 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            return string.Format("name:{0} endpoint:{1}", _name, _endpoint);
+            return $"name:{_name} endpoint:{_endpoint}";
         }
 
         /// <summary>
