@@ -18,16 +18,6 @@ namespace NetMQ.Zyre.ZyreEvents
         /// </summary>
         public string SenderName => _header.SenderName;
 
-        /// <summary>
-        /// The sending peer's headers.
-        /// </summary>
-        public Dictionary<string, string> Headers { get; set; }
-
-        /// <summary>
-        /// The sending peer's EndPoint.
-        /// </summary>
-        public string Address { get; set; }
-
         private readonly ZyreEventHeader _header;
 
         /// <summary>

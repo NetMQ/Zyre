@@ -1017,7 +1017,6 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Send(IOutgoingSocket output)
         {
-            var identity = ((DealerSocket)output).Options.Identity;
             if (output is RouterSocket)
                 output.SendMoreFrame(RoutingId);
 
