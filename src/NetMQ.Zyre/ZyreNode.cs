@@ -135,11 +135,11 @@ namespace NetMQ.Zyre
         /// outbox is passed to ZreNode for sending Zyre message traffic back to caller.
         /// </summary>
         /// <param name="outbox"></param>
-        /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
+        /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        internal static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
+        internal static NetMQActor Create(PairSocket outbox, Action<string> loggerDelegate = null)
         {
-            var node = new ZyreNode(outbox, verboseAction);
+            var node = new ZyreNode(outbox, loggerDelegate);
             return node._actor;
         }
 
@@ -357,7 +357,7 @@ namespace NetMQ.Zyre
                     _pipe.SendFrame(_name);
                     break;
                 case "ENDPOINT":
-                    _pipe.SendFrame(_endpoint);
+                    _pipe.SendFrame(_endpoint ?? "");
                     break;
                 case "SET NAME":
                     _name = request.Pop().ConvertToString();

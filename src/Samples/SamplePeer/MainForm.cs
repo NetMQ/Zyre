@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using NetMQ.Zyre;
+using NetMQ.Zyre.ZyreEvents;
 
 namespace SamplePeer
 {
@@ -16,13 +17,21 @@ namespace SamplePeer
     {
         private readonly string _name;
         private readonly Zyre _zyre;
-        
+        private readonly Dictionary<Guid, Peer> _connectedPeers;
+        private readonly Guid _uuid;
+
         public MainForm(string name)
         {
-            _name = name;
             InitializeComponent();
             btnStop.Enabled = false;
+            _connectedPeers = new Dictionary<Guid, Peer>();
             _zyre = new Zyre(_name, NodeLogger);
+            if (!string.IsNullOrEmpty(name))
+            {
+                _zyre.SetName(name);
+            }
+            _name = _zyre.Name();
+            _uuid = _zyre.Uuid();
             _zyre.EnterEvent += ZyreEnterEvent;
             _zyre.StopEvent += ZyreStopEvent;
             _zyre.ExitEvent += ZyreExitEvent;
@@ -33,43 +42,50 @@ namespace SamplePeer
             _zyre.ShoutEvent += ZyreShoutEvent;
         }
 
-        private void ZyreShoutEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventShout e)
+        private void ZyreShoutEvent(object sender, ZyreEventShout e)
         {
             EventsLogger($"Shout: {e.SenderName} {e.SenderUuid.ToShortString6()} with {e.Content.FrameCount} message frames shouted to group:{e.GroupName}");
         }
 
-        private void ZyreWhisperEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventWhisper e)
+        private void ZyreWhisperEvent(object sender, ZyreEventWhisper e)
         {
             EventsLogger($"Whisper: {e.SenderName} {e.SenderUuid.ToShortString6()} with {e.Content.FrameCount} message frames");
         }
 
-        private void ZyreJoinEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventJoin e)
+        private void ZyreJoinEvent(object sender, ZyreEventJoin e)
         {
             EventsLogger($"Join: {e.SenderName} {e.SenderUuid.ToShortString6()} Group:{e.GroupName}");
         }
 
-        private void ZyreLeaveEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventLeave e)
+        private void ZyreLeaveEvent(object sender, ZyreEventLeave e)
         {
             EventsLogger($"Leave: {e.SenderName} {e.SenderUuid.ToShortString6()} Group:{e.GroupName}");
         }
 
-        private void ZyreEvasiveEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventEvasive e)
+        private void ZyreEvasiveEvent(object sender, ZyreEventEvasive e)
         {
             EventsLogger($"Evasive: {e.SenderName} {e.SenderUuid.ToShortString6()}");
         }
 
-        private void ZyreExitEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventExit e)
+        private void ZyreExitEvent(object sender, ZyreEventExit e)
         {
+            _connectedPeers.Remove(e.SenderUuid);
+            PeerBindingSourceResetBindings();
             EventsLogger($"Exited: {e.SenderName} {e.SenderUuid.ToShortString6()}");
         }
 
-        private void ZyreStopEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventStop e)
+        private void ZyreStopEvent(object sender, ZyreEventStop e)
         {
+            _connectedPeers.Remove(e.SenderUuid);
+            PeerBindingSourceResetBindings();
             EventsLogger($"Stopped: {e.SenderName} {e.SenderUuid.ToShortString6()}");
         }
 
-        private void ZyreEnterEvent(object sender, NetMQ.Zyre.ZyreEvents.ZyreEventEnter e)
+        private void ZyreEnterEvent(object sender, ZyreEventEnter e)
         {
+            var peer = new Peer(e.SenderName, e.SenderUuid);
+            _connectedPeers.Add(e.SenderUuid, peer);
+            PeerBindingSourceResetBindings();
             EventsLogger($"Entered: {e.SenderName} {e.SenderUuid.ToShortString6()} at {e.Address} with {e.Headers.Count} headers");
             if (e.Headers.Count > 0)
             {
@@ -82,11 +98,23 @@ namespace SamplePeer
             }
         }
 
+        private void PeerBindingSourceResetBindings()
+        {
+            if (InvokeRequired)
+            {
+                this.BeginInvoke(new MethodInvoker(PeerBindingSourceResetBindings));
+            }
+            else
+            {
+                peerBindingSource.DataSource = _connectedPeers.Values.ToList();
+            }
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(_name))
             {
-                Text = $"Zyre Peer: {_name}";
+                Text = $"Zyre Node: {_name} {_uuid}";
             }
         }
 
@@ -107,6 +135,8 @@ namespace SamplePeer
             btnStop.Enabled = false;
             btnStart.Enabled = true;
             _zyre.Stop();
+            _connectedPeers.Clear();
+            PeerBindingSourceResetBindings();
         }
         
         public void NodeLogger(string str)
@@ -135,6 +165,16 @@ namespace SamplePeer
                     rtb.Text = rtb.Text.Substring(0, 50000);
                 }
             }
+        }
+
+        private void peerDataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            Utility.HandleDataGridViewError(sender, e);
+        }
+
+        private void peerDataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            Utility.HandleDataGridViewError(sender, e);
         }
     }
 }

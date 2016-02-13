@@ -34,7 +34,7 @@ namespace NetMQ.Zyre.Tests
                 node1.Should().NotBeNull();
                 node1.Name().Should().Be("node1");
                 node1.SetHeader("X-HELLO", "World");
-                var uuid1 = node1.Uuid;
+                var uuid1 = node1.Uuid();
                 uuid1.Should().NotBeEmpty();
                 Thread.Sleep(100);
                 node1Writer.ConsoleWrite("After starting node1, Dump():");
@@ -73,7 +73,7 @@ namespace NetMQ.Zyre.Tests
 
                 // Start both nodes
                 node1.Start();
-                var uuid1 = node1.Uuid;
+                var uuid1 = node1.Uuid();
                 uuid1.Should().NotBeEmpty();
                 node1Writer.ConsoleWrite("After starting node1, Dump():");
                 node1.Dump();
@@ -82,7 +82,7 @@ namespace NetMQ.Zyre.Tests
                 node2.Name().Should().Be("node2");
 
                 node2.Start();
-                var uuid2 = node2.Uuid;
+                var uuid2 = node2.Uuid();
                 uuid1.Should().NotBe(uuid2);
                 Console.WriteLine("After starting node2, Dump():");
                 node2.Dump();
@@ -115,7 +115,7 @@ namespace NetMQ.Zyre.Tests
                 var peerGroups = node1.PeerGroups();
                 peerGroups.Count.Should().Be(2);
 
-                var value = node1.PeerHeaderValue(node1.Uuid, "X-HELLO");
+                var value = node1.PeerHeaderValue(node1.Uuid(), "X-HELLO");
                 value.Should().Be("World");
 
                 // One node shouts to GLOBAL

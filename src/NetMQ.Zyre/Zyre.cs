@@ -44,8 +44,7 @@ namespace NetMQ.Zyre
         /// </summary>
         private string _endpoint;
 
-        private readonly NetMQPoller _inboxPoller
-            ;
+        private readonly NetMQPoller _inboxPoller;
 
         /// <summary>
         /// Create a Zyre API that communicates with a node on the ZRE bus.
@@ -61,6 +60,7 @@ namespace NetMQ.Zyre
 
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
+
             _actor = ZyreNode.Create(outbox, loggerDelegate);
             _inboxPoller = new NetMQPoller();
             _inbox.ReceiveReady += InboxReceiveReady;
@@ -76,16 +76,13 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return our node UUID string, after successful initialization
         /// </summary>
-        public Guid Uuid
+        public Guid Uuid()
         {
-            get
-            {
-                _actor.SendFrame("UUID");
-                var uuidBytes = _actor.ReceiveFrameBytes();
-                Debug.Assert(uuidBytes.Length == 16);
-                _uuid = new Guid(uuidBytes);
-                return _uuid;
-            }
+            _actor.SendFrame("UUID");
+            var uuidBytes = _actor.ReceiveFrameBytes();
+            Debug.Assert(uuidBytes.Length == 16);
+            _uuid = new Guid(uuidBytes);
+            return _uuid;
         }
 
         /// <summary>
