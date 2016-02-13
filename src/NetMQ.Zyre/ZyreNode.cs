@@ -583,6 +583,7 @@ namespace NetMQ.Zyre
             peer = ZyrePeer.NewPeer(_peers, uuid, _loggerDelegate);
             peer.SetOrigin(_name);
             peer.Connect(_uuid, endpoint);
+            Thread.Sleep(1000); // allow some time so we don't lose messages
 
             // Handshake discovery by sending HELLO as first message
             var helloMessage = new ZreMsg
@@ -899,6 +900,11 @@ namespace NetMQ.Zyre
         /// <returns>true if this peer should be removed</returns>
         private bool PingPeer(ZyrePeer peer)
         {
+            if (!_isRunning)
+            {
+                // We have been stopped. We know longer can communicate to peers.
+                return true;
+            }
             if (ZyrePeer.CurrentTimeMilliseconds() >= peer.ExpiredAt)
             {
                 return true;

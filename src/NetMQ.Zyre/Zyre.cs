@@ -184,7 +184,7 @@ namespace NetMQ.Zyre
         public void Stop()
         {
             _actor.SendFrame("STOP");
-            Thread.Sleep(100); // wait for poller so we don't miss messages
+            Thread.Sleep(1000); // wait for poller so we don't miss messages
             _inboxPoller.Remove(_inbox);
         }
 
