@@ -86,7 +86,7 @@ namespace SamplePeer
 
         private void ZyreEnterEvent(object sender, ZyreEventEnter e)
         {
-            var peer = new Peer(e.SenderName, e.SenderUuid);
+            var peer = new Peer(e.SenderName, e.SenderUuid, e.Address);
             _connectedPeers.Add(e.SenderUuid, peer);
             PeerBindingSourceResetBindings();
             EventsLogger($"Entered: {e.SenderName} {e.SenderUuid.ToShortString6()} at {e.Address} with {e.Headers.Count} headers");
@@ -188,6 +188,26 @@ namespace SamplePeer
         private void peerDataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
             Utility.HandleDataGridViewError(sender, e);
+        }
+
+        private void btnJoin_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnLeave_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnWhisper_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnShout_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
