@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using NetMQ.Zyre;
@@ -19,6 +20,7 @@ namespace SamplePeer
         private readonly Zyre _zyre;
         private readonly Dictionary<Guid, Peer> _connectedPeers;
         private readonly Guid _uuid;
+        private string _endpoint;
 
         public MainForm(string name)
         {
@@ -32,6 +34,7 @@ namespace SamplePeer
             }
             _name = _zyre.Name();
             _uuid = _zyre.Uuid();
+            _endpoint = _zyre.EndPoint(); // every time we start, we bind our RouterSocket to a new port
             _zyre.EnterEvent += ZyreEnterEvent;
             _zyre.StopEvent += ZyreStopEvent;
             _zyre.ExitEvent += ZyreExitEvent;
@@ -112,9 +115,15 @@ namespace SamplePeer
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(_name))
+            DisplayTitle();
+        }
+
+        private void DisplayTitle()
+        {
+            Text = $"Zyre Node: {_name} {_uuid}";
+            if (!string.IsNullOrEmpty(_endpoint))
             {
-                Text = $"Zyre Node: {_name} {_uuid}";
+                Text += $" -- listening at {_endpoint}";
             }
         }
 
@@ -135,13 +144,16 @@ namespace SamplePeer
             btnStop.Enabled = false;
             btnStart.Enabled = true;
             _zyre.Stop();
+            _endpoint = null;  // every time we start, we bind our RouterSocket to a new port
+            DisplayTitle();
             _connectedPeers.Clear();
             PeerBindingSourceResetBindings();
         }
         
         public void NodeLogger(string str)
         {
-            var msg = $"{DateTime.Now.ToString("h:mm:ss.fff")} ({_name}) {str}";
+            var threadId = Thread.CurrentThread.ManagedThreadId;
+            var msg = $"Thd:{threadId} {DateTime.Now.ToString("h:mm:ss.fff")} ({_name}) {str}";
             Logger(rtbNodeLog, msg);
         }
 
@@ -151,6 +163,11 @@ namespace SamplePeer
             Logger(rtbEventsLog, msg);
         }
 
+        /// <summary>
+        /// Put a message at the TOP of the richTextBox
+        /// </summary>
+        /// <param name="rtb">the richTextBox</param>
+        /// <param name="msg">the message</param>
         private void Logger(RichTextBox rtb, string msg)
         {
             if (rtb.InvokeRequired)
@@ -159,20 +176,16 @@ namespace SamplePeer
             }
             else
             {
+                const int longestText = 1000000;
                 rtb.Text = msg + Environment.NewLine + rtb.Text;
-                if (rtb.TextLength > 100000)
+                if (rtb.TextLength > longestText)
                 {
-                    rtb.Text = rtb.Text.Substring(0, 50000);
+                    rtb.Text = rtb.Text.Substring(0, longestText / 2);
                 }
             }
         }
 
         private void peerDataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
-        {
-            Utility.HandleDataGridViewError(sender, e);
-        }
-
-        private void peerDataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
             Utility.HandleDataGridViewError(sender, e);
         }

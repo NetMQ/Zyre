@@ -21,7 +21,7 @@ namespace NetMQ.Zyre
         /// Socket through to peer.
         /// DealerSocket connected to the peer's RouterSocket.
         /// ZRE messages are sent from this _mailbox for each peer
-        ///    and they are received by the ZreNode's RouterSocket _inbox.
+        ///    to the peer's RouterSocket _inbox.
         /// </summary>
         private DealerSocket _mailbox;
 
@@ -34,26 +34,6 @@ namespace NetMQ.Zyre
         /// Origin node's internal name
         /// </summary>
         private string _origin;
-
-        /// <summary>
-        /// Peer is being evasive
-        /// </summary>
-        private long _evasiveAt;
-
-        /// <summary>
-        /// Peer has expired by now
-        /// </summary>
-        private long _expiredAt;
-
-        /// <summary>
-        /// Peer has said Hello to us
-        /// </summary>
-        private bool _ready;
-
-        /// <summary>
-        /// Our status counter
-        /// </summary>
-        private byte _status;
 
         /// <summary>
         /// Outgoing message sequence counter used for detecting lost messages
@@ -82,7 +62,7 @@ namespace NetMQ.Zyre
         {
             Uuid = uuid;
             _loggerDelegate = loggerDelegate;
-            _ready = false;
+            Ready = false;
             Connected = false;
             _sentSequence = 0;
             _wantSequence = 0;
@@ -90,15 +70,15 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Construct new ZrePeer object
+        /// Construct new ZyrePeer object
         /// </summary>
         /// <param name="container">The dictionary of peers</param>
         /// <param name="guid">The identity for this peer</param>
-        /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
+        /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        internal static ZyrePeer NewPeer(Dictionary<Guid, ZyrePeer> container, Guid guid, Action<string> verboseAction = null)
+        internal static ZyrePeer NewPeer(Dictionary<Guid, ZyrePeer> container, Guid guid, Action<string> loggerDelegate = null)
         {
-            var peer = new ZyrePeer(guid, verboseAction);
+            var peer = new ZyrePeer(guid, loggerDelegate);
             container[guid] = peer; // overwrite any existing entry for same uuid
             return peer;
         }
@@ -142,11 +122,11 @@ namespace NetMQ.Zyre
                     // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses TrySend() with TimeSpan.Zero
                 }
             };
-            _loggerDelegate?.Invoke($"({_origin}) (identity={replyTo.ToShortString6()}) DealerSocket mailbox is connecting to peer endPoint={Endpoint}, ");
+            _loggerDelegate?.Invoke($"DealerSocket mailbox is connecting to peer at endpoint={endpoint} with identity={replyTo.ToShortString6()}");
             _mailbox.Connect(endpoint);
             Endpoint = endpoint;
             Connected = true;
-            _ready = false;
+            Ready = false;
         }
 
         internal static byte[] GetIdentity(Guid replyTo)
@@ -164,11 +144,14 @@ namespace NetMQ.Zyre
         /// </summary>
         internal void Disconnect()
         {
-            _mailbox.Dispose();
-            _mailbox = null;
-            Endpoint = null;
-            Connected = false;
-            _ready = false;
+            if (Connected)
+            {
+                _mailbox.Dispose();
+                _mailbox = null;
+                Endpoint = null;
+                Connected = false;
+                Ready = false;
+            }
         }
 
         /// <summary>
@@ -181,8 +164,9 @@ namespace NetMQ.Zyre
             if (Connected)
             {
                 msg.Sequence = ++_sentSequence;
-                _loggerDelegate?.Invoke($"({_origin}) ZrePeer.Send() sending message={msg} from peer={this}");
+                _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() sending message={msg} to Endpoint={Endpoint}");
                 msg.Send(_mailbox);
+                _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() SENT message={msg} to Endpoint={Endpoint}");
             }
             return true;
         }
@@ -207,8 +191,8 @@ namespace NetMQ.Zyre
         /// </summary>
         internal void Refresh()
         {
-            _evasiveAt = CurrentTimeMilliseconds() + PeerEvasive;
-            _expiredAt = CurrentTimeMilliseconds() + PeerExpired;
+            EvasiveAt = CurrentTimeMilliseconds() + PeerEvasive;
+            ExpiredAt = CurrentTimeMilliseconds() + PeerExpired;
         }
 
         /// <summary>
@@ -223,43 +207,31 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer future expired time
         /// </summary>
-        internal long EvasiveAt
-        {
-            get { return _evasiveAt; }
-        }
+        internal long EvasiveAt { get; private set; }
 
         /// <summary>
         /// Return peer future evasive time
         /// </summary>
-        internal long ExpiredAt
-        {
-            get { return _expiredAt; }
-        }
+        internal long ExpiredAt { get; private set; }
 
         /// <summary>
         /// Return peer name
         /// </summary>
-        internal string Name
-        {
-            get { return _name ?? ""; }
-        }
+        internal string Name => _name ?? "";
 
         /// <summary>
         /// Return peer cycle
         /// This gives us a state change count for the peer, which we can
         /// check against its claimed status, to detect message loss.
         /// </summary>
-        internal byte Status
-        {
-            get { return _status; }
-        }
+        internal byte Status { get; private set; }
 
         /// <summary>
         /// Increment status
         /// </summary>
         internal void IncrementStatus()
         {
-            _status = _status == UbyteMax ? (byte) 0 : ++_status;
+            Status = Status == UbyteMax ? (byte) 0 : ++Status;
         }
 
         /// <summary>
@@ -286,16 +258,13 @@ namespace NetMQ.Zyre
         /// <param name="status"></param>
         internal void SetStatus(byte status)
         {
-            _status = status;
+            Status = status;
         }
 
         /// <summary>
         /// Return peer ready state. True when peer has said Hello to us
         /// </summary>
-        internal bool Ready
-        {
-            get { return _ready; }
-        }
+        internal bool Ready { get; private set; }
 
         /// <summary>
         /// Set peer ready
@@ -303,7 +272,7 @@ namespace NetMQ.Zyre
         /// <param name="ready"></param>
         internal void SetReady(bool ready)
         {
-            _ready = ready;
+            Ready = ready;
         }
 
         /// <summary>
@@ -363,7 +332,7 @@ namespace NetMQ.Zyre
             {
                 if (_loggerDelegate != null)
                 {
-                    _loggerDelegate($"({_origin}) seq error from peer={_name} expect={_wantSequence}, got={msg.Sequence}");
+                    _loggerDelegate($"Sequence error for peer={_name} expect={_wantSequence}, got={msg.Sequence}");
                 }
                 return true;
             }
@@ -375,7 +344,7 @@ namespace NetMQ.Zyre
             var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
             var origin = string.IsNullOrEmpty(_origin) ? "NotSet" : _origin;
             return
-                $"from [origin:{origin} to name:{name} endpoint:{Endpoint} connected:{Connected} ready:{_ready} status:{_status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{Uuid.ToShortString6()}]";
+                $"[from origin:{origin} to name:{name} endpoint:{Endpoint} connected:{Connected} ready:{Ready} status:{Status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{Uuid.ToShortString6()}]";
         }
 
         /// <summary>

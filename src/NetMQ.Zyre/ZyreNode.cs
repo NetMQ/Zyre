@@ -15,7 +15,7 @@ namespace NetMQ.Zyre
     {
         private const int ZreDiscoveryPort = 5670; // IANA-assigned
         private const byte BeaconVersion = 0x1;
-        private const byte UbyteMax = byte.MaxValue;
+        private const byte UbyteMax = Byte.MaxValue;
 
         /// <summary>
         /// Lock for the Dump() method so we get all of it at once.
@@ -66,8 +66,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Our _inbox socket (ROUTER).
         /// ReceivePeer() receives messages from peers into _inbox.
-        /// ZRE messages are sent from this _mailbox for each peer
-        ///    and they are received by the ZreNode's RouterSocket _inbox.
+        /// ZRE messages are to this _mailbox by each peer
         /// </summary>
         private readonly RouterSocket _inbox;
 
@@ -80,7 +79,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Our internal endpoint, the endpoint corresponding to _inbox.
         /// </summary>
-        private string _endpoint;
+        private readonly string _endpoint;
 
         /// <summary>
         /// Our _inbox port, if any. The port to which _inbox is bound.
@@ -132,14 +131,15 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Create a new node and return the actor that controls it.
         /// All node control is done through _actor.
-        /// outbox is passed to ZreNode for sending Zyre message traffic back to caller.
+        /// outbox is passed to ZyreNode for sending Zyre message traffic back to caller.
         /// </summary>
         /// <param name="outbox"></param>
         /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
-        /// <returns></returns>
+        /// <returns>the _actor, or null if not successful</returns>
         internal static NetMQActor Create(PairSocket outbox, Action<string> loggerDelegate = null)
         {
             var node = new ZyreNode(outbox, loggerDelegate);
+
             return node._actor;
         }
 
@@ -149,12 +149,7 @@ namespace NetMQ.Zyre
             _loggerDelegate = loggerDelegate;
 
             _inbox = new RouterSocket();
-
-            //  Use ZMQ_ROUTER_HANDOVER so that when a peer disconnects and
-            //  then reconnects, the new client connection is treated as the
-            //  canonical one, and any old trailing commands are discarded.
-            // TODO: This RouterHandover option apparently doesn't exist in NetMQ 
-            //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
+            _inbox.ReceiveReady += OnInboxReady;
 
             _beaconPort = ZreDiscoveryPort;
             _interval = TimeSpan.Zero; // Use default
@@ -168,7 +163,45 @@ namespace NetMQ.Zyre
             //  the shorter string is more readable in logs
             _name = _uuid.ToShortString6();
 
+            //  Use ZMQ_ROUTER_HANDOVER so that when a peer disconnects and
+            //  then reconnects, the new client connection is treated as the
+            //  canonical one, and any old trailing commands are discarded.
+            //  This RouterHandover option is currently not supported in NetMQ Feb 1 2016
+
+            // We create the _beacon and bind the _inbox here, rather than in Start(). 
+            // jyre does this (zeromq/zyre and pyre) don't. Eliminates the need for RouterHandover, I think.
+            _beacon = new NetMQBeacon();
+            _beacon.ReceiveReady += OnBeaconReady;
+            _beacon.Configure(_beaconPort);
+            
+            // Bind our router port to the host
+            var address = $"tcp://{_beacon.BoundTo}";
+            _port = _inbox.BindRandomPort(address);
+            if (_port <= 0)
+            {
+                // Die on bad interface or port exhaustion
+                return;
+            }
+            _endpoint = $"{address}:{_port}";
+            _loggerDelegate?.Invoke($"The _inbox RouterSocket for node {_uuid.ToShortString6()} is bound to _endpoint={_endpoint}");
             _actor = NetMQActor.Create(RunActor);
+        }
+
+        private void OnInboxReady(object sender, NetMQSocketEventArgs e)
+        {
+            try
+            {
+                ReceivePeer();
+            }
+            catch (Exception ex)
+            {
+                _loggerDelegate?.Invoke(ex.ToString());
+            }
+        }
+
+        private void OnBeaconReady(object sender, NetMQBeaconEventArgs e)
+        {
+            ReceiveBeacon();
         }
 
         /// <summary>
@@ -181,44 +214,19 @@ namespace NetMQ.Zyre
             {
                 return false;
             }
-            Debug.Assert(_beacon == null);
-            _beacon = new NetMQBeacon();
-            _beacon.Configure(_beaconPort);
+            _loggerDelegate?.Invoke($"Starting {_name} {_uuid.ToShortString6()}. Publishing beacon on port {_port}. Adding _beacon and _inbox to poller.");
 
-            // listen to incoming beacons
-            _beacon.ReceiveReady += OnBeaconReady;
-
-            // Bind our router port to the host
-            var address = $"tcp://{_beacon.BoundTo}";
-            _port = _inbox.BindRandomPort(address);
-            if (_port <= 0)
-            {
-                // Die on bad interface or port exhaustion
-                return false;
-            }
-            _endpoint = $"{address}:{_port}";
-            _loggerDelegate?.Invoke($"Beacon for {_uuid.ToShortString6()} is going out. The _inbox RouterSocket is bound to _endpoint={_endpoint}");
+            // Start polling on _inbox and _beacon
+            _poller.Add(_inbox);
+            _poller.Add(_beacon);
+            Thread.Sleep(1000); // wait for poller so we don't miss messages
 
             //  Set broadcast/listen beacon
             PublishBeacon(_port);
             _beacon.Subscribe("ZRE");
-            _poller.Add(_beacon);
 
-            // Start polling on inbox
-            _inbox.ReceiveReady += OnInboxReady;
-            _poller.Add(_inbox);
             _isRunning = true;
             return true;
-        }
-
-        private void OnInboxReady(object sender, NetMQSocketEventArgs e)
-        {
-            ReceivePeer();
-        }
-
-        private void OnBeaconReady(object sender, NetMQBeaconEventArgs e)
-        {
-            ReceiveBeacon();
         }
 
         /// <summary>
@@ -231,16 +239,14 @@ namespace NetMQ.Zyre
             {
                 return;
             }
-            // Stop broadcast/listen beacon
+            _loggerDelegate?.Invoke($"Stopping {_name} {_uuid.ToShortString6()}. Publishing beacon on port 0. Removing _beacon and _inbox from poller.");
+
+            // Stop broadcast/listen beacon by broadcasting port 0
             PublishBeacon(0);
             Thread.Sleep(1); // Allow 1 millisecond for beacon to go out
-            _beacon.ReceiveReady -= OnBeaconReady;
             _poller.Remove(_beacon);
-            _beacon.Dispose();
-            _beacon = null;
 
             // Stop polling on inbox
-            _inbox.ReceiveReady -= OnInboxReady;
             _poller.Remove(_inbox);
 
             // Tell the application we are stopping
@@ -248,7 +254,7 @@ namespace NetMQ.Zyre
             msg.Append("STOP");
             msg.Append(_uuid.ToByteArray());
             msg.Append(_name);
-            _outbox.TrySendMultipartMessage(TimeSpan.Zero, msg);
+            _outbox.SendMultipartMessage(msg);
             _isRunning = false;
         }
 
@@ -262,7 +268,7 @@ namespace NetMQ.Zyre
         private bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
         {
             uuid = Guid.Empty;
-            port = int.MinValue;
+            port = Int32.MinValue;
             if (bytes.Length != 22)
             {
                 return false;
@@ -361,7 +367,7 @@ namespace NetMQ.Zyre
                     break;
                 case "SET NAME":
                     _name = request.Pop().ConvertToString();
-                    Debug.Assert(!string.IsNullOrEmpty(_name));
+                    Debug.Assert(!String.IsNullOrEmpty(_name));
                     break;
                 case "SET HEADER":
                     var key = request.Pop().ConvertToString();
@@ -370,7 +376,7 @@ namespace NetMQ.Zyre
                     break;
                 case "SET PORT":
                     var str = request.Pop().ConvertToString();
-                    int.TryParse(str, out _port);
+                    Int32.TryParse(str, out _port);
                     break;
                 case "SET INTERVAL":
                     var intervalStr = request.Pop().ConvertToString();
@@ -519,7 +525,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        private static Guid PopGuid(NetMQMessage message)
+        private Guid PopGuid(NetMQMessage message)
         {
             var bytes = message.Pop().ToByteArray();
             Debug.Assert(bytes.Length == 16);
@@ -540,6 +546,9 @@ namespace NetMQ.Zyre
             }
         }
 
+        private readonly HashSet<ZyrePeer> _reportedKnownPeersTmp = new HashSet<ZyrePeer>();
+        private bool _isRequirePeerRunning;
+
         /// <summary>
         /// Find or create peer via its UUID
         /// </summary>
@@ -548,10 +557,21 @@ namespace NetMQ.Zyre
         /// <returns>A peer (existing, or new one connected to endpoint)</returns>
         private ZyrePeer RequirePeer(Guid uuid, string endpoint)
         {
-            Debug.Assert(!string.IsNullOrEmpty(endpoint));
+            if (_isRequirePeerRunning)
+            {
+                _loggerDelegate?.Invoke($"Entry into {nameof(ZyreNode)}.{nameof(RequirePeer)}() while it's running. uuid={uuid.ToShortString6()}");
+            }
+            _isRequirePeerRunning = true;
+            Debug.Assert(!String.IsNullOrEmpty(endpoint));
             ZyrePeer peer;
             if (_peers.TryGetValue(uuid, out peer))
             {
+                if (!_reportedKnownPeersTmp.Contains(peer))
+                {
+                    _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() returning already-known peer={peer}");
+                    _reportedKnownPeersTmp.Add(peer);
+                }
+                _isRequirePeerRunning = false;
                 return peer;
             }
 
@@ -577,9 +597,27 @@ namespace NetMQ.Zyre
                     Headers = _headers
                 }
             };
-            _loggerDelegate?.Invoke($"({_name}) RequirePeer() created new peer {peer}. Sending Hello message={helloMessage}");
+            _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() created new peer uuid={uuid}. Sending Hello message...");
             peer.Send(helloMessage);
+            _loggerDelegate?.Invoke($"TMP {nameof(ZyreNode)}.{nameof(RequirePeer)}() created new peer uuid={uuid}. SENT Hello message...");
+            var callingMethod = MethodNameLevelAbove();
+            _loggerDelegate?.Invoke($"TMP Called by {callingMethod}");
+            _isRequirePeerRunning = false;
             return peer;
+        }
+
+        /// <summary>
+        /// Return a string showing the class name and method of method calling the method calling this method, used for reporting errors
+        /// </summary>
+        /// <returns></returns>
+        public static string MethodNameLevelAbove()
+        {
+            var stackTrace = new StackTrace();
+            var stackFrame = stackTrace.GetFrame(2);
+            var mb = stackFrame.GetMethod();
+
+            // ReSharper disable once PossibleNullReferenceException
+            return mb.ReflectedType.Name + ":" + mb.Name + "()";
         }
 
         /// <summary>
@@ -600,7 +638,7 @@ namespace NetMQ.Zyre
         {
             // Tell the calling application the peer has gone
             _outbox.SendMoreFrame("EXIT").SendMoreFrame(peer.Uuid.ToByteArray()).SendFrame(peer.Name);
-            _loggerDelegate?.Invoke($"({_name} EXIT name={peer.Name} endpoint={peer.Endpoint}");
+            _loggerDelegate?.Invoke($"EXIT name={peer.Name} endpoint={peer.Endpoint}");
 
             // Remove peer from any groups we've got it in
             foreach (var peerGroup in _peerGroups.Values)
@@ -640,7 +678,7 @@ namespace NetMQ.Zyre
 
             // Now tell the caller about the peer joined group
             _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(groupName);
-            _loggerDelegate?.Invoke($"({_name} JOIN name={peer.Name} group={groupName}");
+            _loggerDelegate?.Invoke($"JOIN name={peer.Name} group={groupName}");
            return group;
         }
 
@@ -657,7 +695,7 @@ namespace NetMQ.Zyre
 
             // Now tell the caller about the peer left group
             _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(groupName);
-            _loggerDelegate?.Invoke($"({_name} LEAVE name={peer.Name} group={groupName}");
+            _loggerDelegate?.Invoke($"LEAVE name={peer.Name} group={groupName}");
             return group;
         }
 
@@ -671,16 +709,24 @@ namespace NetMQ.Zyre
             if (msg == null)
             {
                 // Ignore a bad message (header or message signature doesn't meet http://rfc.zeromq.org/spec:36)
+                _loggerDelegate?.Invoke("Ignoring a bad message (header or message signature doesn't meet http://rfc.zeromq.org/spec:36)");
                 return;
             }
+            if (uuid == _uuid)
+            {
+                var text = $"({_name}) Our own message should not be coming back to us! {_uuid}";
+                _loggerDelegate?.Invoke(text);
+                throw new InvalidOperationException(text);
+            }
+            _loggerDelegate?.Invoke($"ZyreNode.ReceivePeer() received message={msg}");
             Debug.Assert(uuid != _uuid, $"({_name}) Our own message should not be coming back to us! {_uuid}");
             ZyrePeer peer;
             if (!_peers.TryGetValue(uuid, out peer))
             {
-                _loggerDelegate?.Invoke($"Received Unknown Peer into _inbox uuid={uuid.ToShortString6()}");
+                _loggerDelegate?.Invoke($"Received message from unknown peer (uuid={uuid.ToShortString6()})");
                 if (msg.Id == ZreMsg.MessageId.Hello)
                 {
-                    _loggerDelegate?.Invoke($"endPoint of the Unknown Peer={msg.Hello.Endpoint}");
+                    _loggerDelegate?.Invoke($"endpoint of the Unknown Peer={msg.Hello.Endpoint}");
                 }
             }
             if (msg.Id == ZreMsg.MessageId.Hello)
@@ -698,24 +744,33 @@ namespace NetMQ.Zyre
                     else if (peer.Endpoint == _endpoint)
                     {
                         // We ignore HELLO, if peer has same endpoint as current node
+                        _loggerDelegate?.Invoke("Ignoring peer that has same endpoint as current node");
                         return;
                     }
                 }
                 peer = RequirePeer(uuid, msg.Hello.Endpoint);
+                _loggerDelegate?.Invoke($"TMP Did {nameof(RequirePeer)}");
                 peer.SetReady(true);
             }
-            if (peer == null || !peer.Ready)
+            if (peer == null)
             {
-                // Ignore command if peer isn't ready
+                _loggerDelegate?.Invoke("Ignoring null peer");
                 return;
             }
-            _loggerDelegate?.Invoke($"({_name}) ZreNode.ReceivePeer() received message={msg} from peer={peer} ");
+            if (!peer.Ready)
+            {
+                // Ignore command if peer isn't ready
+                _loggerDelegate?.Invoke($"Ignoring peer that isn't ready: {peer}");
+                return;
+            }
             if (peer.MessagesLost(msg))
             {
-                _loggerDelegate?.Invoke($"({_name}) MessagesLost! ZreNode.ReceivePeer() ignoring message={msg} from peer={peer} ");
+                _loggerDelegate?.Invoke($"MessagesLost! {nameof(ZyreNode)}.{nameof(ReceivePeer)}() ignoring message={msg} from peer={peer} ");
                 RemovePeer(peer);
                 return;
             }
+
+            _loggerDelegate?.Invoke($"TMP Ready to process each command in {nameof(ReceivePeer)}");
 
             // Now process each command
             NetMQMessage outMsg; // message we'll send to _outbox
@@ -736,7 +791,7 @@ namespace NetMQ.Zyre
                     outMsg.Append(headersBuffer);
                     outMsg.Append(helloMessage.Endpoint);
                     _outbox.SendMultipartMessage(outMsg);
-                    _loggerDelegate?.Invoke($"({_name} ENTER name={peer.Name} endpoint={peer.Endpoint}");
+                    _loggerDelegate?.Invoke($"ENTER name={peer.Name} endpoint={peer.Endpoint}");
 
                     // Join peer to listed groups
                     foreach (var groupName in helloMessage.Groups)
@@ -746,6 +801,7 @@ namespace NetMQ.Zyre
 
                     // Now take peer's status from HELLO, after joining groups
                     peer.SetStatus(helloMessage.Status);
+                    _loggerDelegate?.Invoke($"Hello message has been processed for peer: {peer}");
                     break;
                 case ZreMsg.MessageId.Whisper:
                     // Pass up to caller API as WHISPER event
@@ -796,6 +852,7 @@ namespace NetMQ.Zyre
 
             // Activity from peer resets peer timers
             peer.Refresh();
+            _loggerDelegate?.Invoke($"TMP Leaving {nameof(ReceivePeer)}");
         }
 
         /// <summary>
@@ -813,19 +870,21 @@ namespace NetMQ.Zyre
             {
                 return;
             }
-            var endPoint = $"tcp://{beaconMessage.PeerHost}:{port}";
+            var endpoint = $"tcp://{beaconMessage.PeerHost}:{port}";
             ZyrePeer peer;
             if (port > 0)
             {
-                peer = RequirePeer(uuid, endPoint);
+                //_loggerDelegate?.Invoke($"TMP {nameof(ReceiveBeacon)} is doing RequirePeer() for endpoint={endpoint}");
+                peer = RequirePeer(uuid, endpoint);
+                //_loggerDelegate?.Invoke($"TMP {nameof(ReceiveBeacon)} DID RequirePeer() for endpoint={endpoint}");
                 peer.Refresh();
             }
             else
             {
                 // Zero port means peer is going away; remove it if we had any knowledge of it already
-                _loggerDelegate?.Invoke($"Removing peer {uuid.ToShortString6()} due to zero port received from {endPoint}");
                 if (_peers.TryGetValue(uuid, out peer))
                 {
+                    _loggerDelegate?.Invoke($"Removing peer {uuid.ToShortString6()} due to zero port received from {endpoint}");
                     RemovePeer(peer);
                 }
             }
@@ -850,7 +909,7 @@ namespace NetMQ.Zyre
                 // ZeroMQTODO: do this only once for a peer in this state;
                 // it would be nicer to use a proper state machine
                 // for peer management.
-                _loggerDelegate?.Invoke($"({_name} peer seems dead/slow name={peer.Name} endpoint={peer.Endpoint}");
+                _loggerDelegate?.Invoke($"Peer seems dead/slow: name={peer.Name} endpoint={peer.Endpoint}");
                 ZreMsg.SendPing(_outbox, 0);
 
                 // Inform the calling application this peer is being evasive
@@ -867,7 +926,6 @@ namespace NetMQ.Zyre
             {
                 return;
             }
-
             lock (DumpLock)
             {
                 _loggerDelegate("zyre_node: dump state");
@@ -924,7 +982,10 @@ namespace NetMQ.Zyre
             {
                 Stop();
             }
-            _poller?.Stop();
+            if (_poller.IsRunning)
+            {
+                _poller?.Stop();
+            }
             _poller?.Dispose();
             _beacon?.Dispose();
             _inbox?.Dispose();
@@ -964,8 +1025,7 @@ namespace NetMQ.Zyre
             // polling until cancelled
             _poller.Run();
 
-            reapTimer.Enable = false;
-            reapTimer.Elapsed -= OnReapTimerElapsed;
+            this.Dispose();
         }
 
         private void OnReapTimerElapsed(object sender, NetMQTimerEventArgs e)
@@ -987,5 +1047,4 @@ namespace NetMQ.Zyre
             }
         }
     }
-
 }

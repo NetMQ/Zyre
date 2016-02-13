@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using NetMQ.Sockets;
 using NetMQ.Zyre.ZyreEvents;
 
@@ -54,7 +55,7 @@ namespace NetMQ.Zyre
         public Zyre (string name, Action<string> loggerDelegate = null)
         {
             // Create front-to-back pipe pair for data traffic
-            // outbox is passed to ZreNode for sending Zyre message traffic back to _inbox
+            // outbox is passed to ZyreNode for sending Zyre message traffic back to _inbox
             PairSocket outbox;
             PairSocket.CreateSocketPair(out outbox, out _inbox);
 
@@ -86,7 +87,7 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Return our node endPoint, after successful initialization.
+        /// Return our node endpoint, after successful initialization.
         /// </summary>
         /// <returns></returns>
         public string EndPoint()
@@ -171,6 +172,7 @@ namespace NetMQ.Zyre
         public void Start()
         {
             _inboxPoller.Add(_inbox);
+            Thread.Sleep(100);
             _actor.SendFrame("START");
         }
 
@@ -181,8 +183,9 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Stop()
         {
-            _inboxPoller.Remove(_inbox);
             _actor.SendFrame("STOP");
+            Thread.Sleep(100); // wait for poller so we don't miss messages
+            _inboxPoller.Remove(_inbox);
         }
 
         /// <summary>
@@ -350,14 +353,14 @@ namespace NetMQ.Zyre
         // These events offer similar functionality to zeromq/zyre/zyre_event.c
 
         /// <summary>
-        /// This receives a message relayed by ZreNode.ReceivePeer()
+        /// This receives a message relayed by ZyreNode.ReceivePeer()
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void InboxReceiveReady(object sender, NetMQSocketEventArgs e)
         {
             var msg = Receive();
-            if (msg.FrameCount == 0)
+            if (msg.FrameCount < 3)
             {
                 return;
             }

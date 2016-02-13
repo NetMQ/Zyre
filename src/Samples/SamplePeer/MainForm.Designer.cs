@@ -31,11 +31,11 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-            this.peerBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.groupBoxConnectedPeers = new System.Windows.Forms.GroupBox();
             this.peerDataGridView = new System.Windows.Forms.DataGridView();
             this.senderNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.senderUuidDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.peerBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.peerBindingNavigator = new System.Windows.Forms.BindingNavigator(this.components);
             this.bindingNavigatorAddNewItem = new System.Windows.Forms.ToolStripButton();
             this.bindingNavigatorCountItem = new System.Windows.Forms.ToolStripLabel();
@@ -58,9 +58,9 @@
             this.splitContainerMain.Panel1.SuspendLayout();
             this.splitContainerMain.Panel2.SuspendLayout();
             this.splitContainerMain.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).BeginInit();
             this.groupBoxConnectedPeers.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerDataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.peerBindingNavigator)).BeginInit();
             this.peerBindingNavigator.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerLogging)).BeginInit();
@@ -86,13 +86,9 @@
             // splitContainerMain.Panel2
             // 
             this.splitContainerMain.Panel2.Controls.Add(this.splitContainerLogging);
-            this.splitContainerMain.Size = new System.Drawing.Size(778, 578);
-            this.splitContainerMain.SplitterDistance = 306;
+            this.splitContainerMain.Size = new System.Drawing.Size(1136, 578);
+            this.splitContainerMain.SplitterDistance = 226;
             this.splitContainerMain.TabIndex = 0;
-            // 
-            // peerBindingSource
-            // 
-            this.peerBindingSource.DataSource = typeof(SamplePeer.Peer);
             // 
             // groupBoxConnectedPeers
             // 
@@ -142,6 +138,10 @@
             this.senderUuidDataGridViewTextBoxColumn.HeaderText = "SenderUuid";
             this.senderUuidDataGridViewTextBoxColumn.Name = "senderUuidDataGridViewTextBoxColumn";
             this.senderUuidDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // peerBindingSource
+            // 
+            this.peerBindingSource.DataSource = typeof(SamplePeer.Peer);
             // 
             // peerBindingNavigator
             // 
@@ -301,8 +301,8 @@
             // splitContainerLogging.Panel2
             // 
             this.splitContainerLogging.Panel2.Controls.Add(this.rtbNodeLog);
-            this.splitContainerLogging.Size = new System.Drawing.Size(778, 268);
-            this.splitContainerLogging.SplitterDistance = 123;
+            this.splitContainerLogging.Size = new System.Drawing.Size(1136, 348);
+            this.splitContainerLogging.SplitterDistance = 89;
             this.splitContainerLogging.TabIndex = 0;
             // 
             // rtbEventsLog
@@ -310,7 +310,7 @@
             this.rtbEventsLog.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtbEventsLog.Location = new System.Drawing.Point(0, 0);
             this.rtbEventsLog.Name = "rtbEventsLog";
-            this.rtbEventsLog.Size = new System.Drawing.Size(778, 123);
+            this.rtbEventsLog.Size = new System.Drawing.Size(1136, 89);
             this.rtbEventsLog.TabIndex = 0;
             this.rtbEventsLog.Text = "";
             // 
@@ -319,7 +319,7 @@
             this.rtbNodeLog.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtbNodeLog.Location = new System.Drawing.Point(0, 0);
             this.rtbNodeLog.Name = "rtbNodeLog";
-            this.rtbNodeLog.Size = new System.Drawing.Size(778, 141);
+            this.rtbNodeLog.Size = new System.Drawing.Size(1136, 255);
             this.rtbNodeLog.TabIndex = 0;
             this.rtbNodeLog.Text = "";
             // 
@@ -327,7 +327,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(778, 578);
+            this.ClientSize = new System.Drawing.Size(1136, 578);
             this.Controls.Add(this.splitContainerMain);
             this.Name = "MainForm";
             this.Text = "Zyre Peer:";
@@ -337,10 +337,10 @@
             this.splitContainerMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
             this.splitContainerMain.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).EndInit();
             this.groupBoxConnectedPeers.ResumeLayout(false);
             this.groupBoxConnectedPeers.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerDataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.peerBindingNavigator)).EndInit();
             this.peerBindingNavigator.ResumeLayout(false);
             this.peerBindingNavigator.PerformLayout();
