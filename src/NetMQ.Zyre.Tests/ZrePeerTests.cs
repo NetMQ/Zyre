@@ -21,10 +21,10 @@ namespace NetMQ.Zyre.Tests
         [Test]
         public void ZyrePeerTests()
         {
-            var peers = new Dictionary<Guid, ZrePeer>();
+            var peers = new Dictionary<Guid, ZyrePeer>();
             var me = Guid.NewGuid();
             var you = Guid.NewGuid();
-            using (var peer = ZrePeer.NewPeer(peers, you, ConsoleWrite))
+            using (var peer = ZyrePeer.NewPeer(peers, you, ConsoleWrite))
             {
                 using (var mailbox = new RouterSocket("tcp://127.0.0.1:5551")) // RouterSocket default action binds to the address
                 {
@@ -47,7 +47,7 @@ namespace NetMQ.Zyre.Tests
 
                     var msg = new ZreMsg();
                     msg.Receive(mailbox);
-                    var identityMe = ZrePeer.GetIdentity(me);
+                    var identityMe = ZyrePeer.GetIdentity(me);
                     var routingEqual = msg.RoutingId.SequenceEqual(identityMe);
                     routingEqual.Should().BeTrue();
                     var hello = msg.Hello;

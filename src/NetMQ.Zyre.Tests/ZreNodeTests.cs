@@ -11,7 +11,7 @@ namespace NetMQ.Zyre.Tests
        [Test]
         public void NewNodeTest()
         {
-            using (var actor = ZreNode.Create(new PairSocket()))
+            using (var actor = ZyreNode.Create(new PairSocket()))
             {
                 actor.Should().NotBeNull();
             }

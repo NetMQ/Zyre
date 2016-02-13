@@ -6,15 +6,15 @@ using System.Collections.Generic;
 
 namespace NetMQ.Zyre
 {
-    public class ZreGroup : IDisposable
+    public class ZyreGroup : IDisposable
     {
         private readonly string _name;
-        private readonly Dictionary<Guid, ZrePeer> _peers;
+        private readonly Dictionary<Guid, ZyrePeer> _peers;
 
-        private ZreGroup(string name)
+        private ZyreGroup(string name)
         {
             _name = name;
-            _peers = new Dictionary<Guid, ZrePeer>();
+            _peers = new Dictionary<Guid, ZyrePeer>();
         }
 
         /// <summary>
@@ -23,9 +23,9 @@ namespace NetMQ.Zyre
         /// <param name="name">name of the new group</param>
         /// <param name="container">container of groups</param>
         /// <returns></returns>
-        internal static ZreGroup NewGroup(string name, Dictionary<string, ZreGroup> container)
+        internal static ZyreGroup NewGroup(string name, Dictionary<string, ZyreGroup> container)
         {
-            var group = new ZreGroup(name);
+            var group = new ZyreGroup(name);
             container[name] = group;
             return group;
         }
@@ -43,7 +43,7 @@ namespace NetMQ.Zyre
         /// Ignore duplicate joins
         /// </summary>
         /// <param name="peer"></param>
-        internal void Join(ZrePeer peer)
+        internal void Join(ZyrePeer peer)
         {
             _peers[peer.Uuid] = peer;
             peer.IncrementStatus();
@@ -53,7 +53,7 @@ namespace NetMQ.Zyre
         /// Remove peer from group
         /// </summary>
         /// <param name="peer"></param>
-        internal void Leave(ZrePeer peer)
+        internal void Leave(ZyrePeer peer)
         {
             _peers.Remove(peer.Uuid);
             peer.IncrementStatus();

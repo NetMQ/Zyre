@@ -90,10 +90,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="ZreMsg.cs" />
-    <Compile Include="ZreGroup.cs" />
+    <Compile Include="ZyreGroup.cs" />
     <Compile Include="zproto\ZreMsgOriginal.cs" />
-    <Compile Include="ZreNode.cs" />
-    <Compile Include="ZrePeer.cs" />
+    <Compile Include="ZyreNode.cs" />
+    <Compile Include="ZyrePeer.cs" />
     <Compile Include="Zyre.cs" />
     <Compile Include="ZyreEvents\ZyreEventEvasive.cs" />
     <Compile Include="ZyreEvents\ZyreEventStop.cs" />

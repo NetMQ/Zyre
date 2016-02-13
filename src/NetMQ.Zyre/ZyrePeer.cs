@@ -8,7 +8,7 @@ using NetMQ.Sockets;
 
 namespace NetMQ.Zyre
 {
-    public class ZrePeer : IDisposable
+    public class ZyrePeer : IDisposable
     {
         private const int PeerEvasive = 10000; // 10 seconds' silence is evasive
         private const int PeerExpired = 30000; // 30 seconds' silence is expired
@@ -78,7 +78,7 @@ namespace NetMQ.Zyre
         #endregion Private Variables
 
 
-        private ZrePeer(Guid uuid, Action<string> loggerDelegate = null)
+        private ZyrePeer(Guid uuid, Action<string> loggerDelegate = null)
         {
             Uuid = uuid;
             _loggerDelegate = loggerDelegate;
@@ -96,9 +96,9 @@ namespace NetMQ.Zyre
         /// <param name="guid">The identity for this peer</param>
         /// <param name="verboseAction">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns></returns>
-        internal static ZrePeer NewPeer(Dictionary<Guid, ZrePeer> container, Guid guid, Action<string> verboseAction = null)
+        internal static ZyrePeer NewPeer(Dictionary<Guid, ZyrePeer> container, Guid guid, Action<string> verboseAction = null)
         {
-            var peer = new ZrePeer(guid, verboseAction);
+            var peer = new ZyrePeer(guid, verboseAction);
             container[guid] = peer; // overwrite any existing entry for same uuid
             return peer;
         }

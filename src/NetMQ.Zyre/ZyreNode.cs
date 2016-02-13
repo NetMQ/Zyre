@@ -11,7 +11,7 @@ using NetMQ.Sockets;
 
 namespace NetMQ.Zyre
 {
-    public class ZreNode : IDisposable
+    public class ZyreNode : IDisposable
     {
         private const int ZreDiscoveryPort = 5670; // IANA-assigned
         private const byte BeaconVersion = 0x1;
@@ -69,7 +69,7 @@ namespace NetMQ.Zyre
         /// ZRE messages are sent from this _mailbox for each peer
         ///    and they are received by the ZreNode's RouterSocket _inbox.
         /// </summary>
-        private RouterSocket _inbox;
+        private readonly RouterSocket _inbox;
 
         /// <summary>
         /// Our internal name. 
@@ -95,17 +95,17 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Hash of known peers, fast lookup. Key is _uuid
         /// </summary>
-        private readonly Dictionary<Guid, ZrePeer> _peers;
+        private readonly Dictionary<Guid, ZyrePeer> _peers;
 
         /// <summary>
         /// Groups that our peers are in. Key is Group name
         /// </summary>
-        private readonly Dictionary<string, ZreGroup> _peerGroups;
+        private readonly Dictionary<string, ZyreGroup> _peerGroups;
 
         /// <summary>
         /// Groups that we are in.  Key is Group name
         /// </summary>
-        private readonly Dictionary<string, ZreGroup> _ownGroups;
+        private readonly Dictionary<string, ZyreGroup> _ownGroups;
 
         /// <summary>
         /// Our header values
@@ -139,11 +139,11 @@ namespace NetMQ.Zyre
         /// <returns></returns>
         internal static NetMQActor Create(PairSocket outbox, Action<string> verboseAction = null)
         {
-            var node = new ZreNode(outbox, verboseAction);
+            var node = new ZyreNode(outbox, verboseAction);
             return node._actor;
         }
 
-        private ZreNode(PairSocket outbox, Action<string> loggerDelegate = null)
+        private ZyreNode(PairSocket outbox, Action<string> loggerDelegate = null)
         {
             _outbox = outbox;
             _loggerDelegate = loggerDelegate;
@@ -153,15 +153,15 @@ namespace NetMQ.Zyre
             //  Use ZMQ_ROUTER_HANDOVER so that when a peer disconnects and
             //  then reconnects, the new client connection is treated as the
             //  canonical one, and any old trailing commands are discarded.
-            // NOTE: This RouterHandover option apparently doesn't exist in NetMQ 
+            // TODO: This RouterHandover option apparently doesn't exist in NetMQ 
             //      so I IGNORE it for now. DaleBrubaker Feb 1 2016
 
             _beaconPort = ZreDiscoveryPort;
             _interval = TimeSpan.Zero; // Use default
             _uuid = Guid.NewGuid();
-            _peers = new Dictionary<Guid, ZrePeer>();
-            _peerGroups = new Dictionary<string, ZreGroup>();
-            _ownGroups = new Dictionary<string, ZreGroup>();
+            _peers = new Dictionary<Guid, ZyrePeer>();
+            _peerGroups = new Dictionary<string, ZyreGroup>();
+            _ownGroups = new Dictionary<string, ZyreGroup>();
             _headers = new Dictionary<string, string>();
 
             //  Default name for node is first 6 characters of UUID:
@@ -318,7 +318,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="peer">The peer to get msg</param>
         /// <param name="msg">the message to send</param>
-        private void SendMessageToPeer(ZrePeer peer, ZreMsg msg)
+        private void SendMessageToPeer(ZyrePeer peer, ZreMsg msg)
         {
             peer.Send(msg);
         }
@@ -385,7 +385,7 @@ namespace NetMQ.Zyre
                 case "WHISPER":
                     // Get peer to send message to
                     var uuid = PopGuid(request);
-                    ZrePeer peer;
+                    ZyrePeer peer;
                     if (_peers.TryGetValue(uuid, out peer))
                     {
                         //  Send frame on out to peer's mailbox, drop message
@@ -401,7 +401,7 @@ namespace NetMQ.Zyre
                 case "SHOUT":
                     // Get group to send message to
                     var groupNameShout = request.Pop().ConvertToString();
-                    ZreGroup group;
+                    ZyreGroup group;
                     if (_ownGroups.TryGetValue(groupNameShout, out group))
                     {
                         var msg = new ZreMsg
@@ -414,7 +414,7 @@ namespace NetMQ.Zyre
                     break;
                 case "JOIN":
                     var groupNameJoin = request.Pop().ConvertToString();
-                    ZreGroup groupJoin;
+                    ZyreGroup groupJoin;
                     if (!_ownGroups.TryGetValue(groupNameJoin, out groupJoin))
                     {
                         // Only send if we're not already in group
@@ -437,7 +437,7 @@ namespace NetMQ.Zyre
                     break;
                 case "LEAVE":
                     var groupNameLeave = request.Pop().ConvertToString();
-                    ZreGroup groupLeave;
+                    ZyreGroup groupLeave;
                     if (_ownGroups.TryGetValue(groupNameLeave, out groupLeave))
                     {
                         // Only send if we are actually in group
@@ -476,7 +476,7 @@ namespace NetMQ.Zyre
                 case "PEER HEADER":
                     var uuidForHeader = PopGuid(request);
                     var keyForHeader = request.Pop().ConvertToString();
-                    ZrePeer peerForHeader;
+                    ZyrePeer peerForHeader;
                     if (_peers.TryGetValue(uuidForHeader, out peerForHeader))
                     {
                         string header;
@@ -532,7 +532,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="endpoint"></param>
-        private void PurgePeer(ZrePeer peer, string endpoint)
+        private void PurgePeer(ZyrePeer peer, string endpoint)
         {
             if (peer.Endpoint == endpoint)
             {
@@ -546,10 +546,10 @@ namespace NetMQ.Zyre
         /// <param name="uuid">the identity of peer</param>
         /// <param name="endpoint">the endpoint to which we will connect the new peer</param>
         /// <returns>A peer (existing, or new one connected to endpoint)</returns>
-        private ZrePeer RequirePeer(Guid uuid, string endpoint)
+        private ZyrePeer RequirePeer(Guid uuid, string endpoint)
         {
             Debug.Assert(!string.IsNullOrEmpty(endpoint));
-            ZrePeer peer;
+            ZyrePeer peer;
             if (_peers.TryGetValue(uuid, out peer))
             {
                 return peer;
@@ -560,7 +560,7 @@ namespace NetMQ.Zyre
             {
                 PurgePeer(existingPeer, endpoint);
             }
-            peer = ZrePeer.NewPeer(_peers, uuid, _loggerDelegate);
+            peer = ZyrePeer.NewPeer(_peers, uuid, _loggerDelegate);
             peer.SetOrigin(_name);
             peer.Connect(_uuid, endpoint);
 
@@ -587,7 +587,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="group"></param>
         /// <param name="peer"></param>
-        private void DeletePeer(ZreGroup group, ZrePeer peer)
+        private void DeletePeer(ZyreGroup group, ZyrePeer peer)
         {
             group.Leave(peer);
         }
@@ -596,7 +596,7 @@ namespace NetMQ.Zyre
         /// Remove a peer from our data structures
         /// </summary>
         /// <param name="peer"></param>
-        private void RemovePeer(ZrePeer peer)
+        private void RemovePeer(ZyrePeer peer)
         {
             // Tell the calling application the peer has gone
             _outbox.SendMoreFrame("EXIT").SendMoreFrame(peer.Uuid.ToByteArray()).SendFrame(peer.Name);
@@ -617,12 +617,12 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        private ZreGroup RequirePeerGroup(string groupName)
+        private ZyreGroup RequirePeerGroup(string groupName)
         {
-            ZreGroup group;
+            ZyreGroup group;
             if (!_peerGroups.TryGetValue(groupName, out group))
             {
-                group = ZreGroup.NewGroup(groupName, _peerGroups);
+                group = ZyreGroup.NewGroup(groupName, _peerGroups);
             }
             return group;
         }
@@ -633,7 +633,7 @@ namespace NetMQ.Zyre
         /// <param name="peer">The peer that is joining thie group</param>
         /// <param name="groupName">The name of the group to join</param>
         /// <returns>the group joined</returns>
-        private ZreGroup JoinPeerGroup(ZrePeer peer, string groupName)
+        private ZyreGroup JoinPeerGroup(ZyrePeer peer, string groupName)
         {
             var group = RequirePeerGroup(groupName);
             group.Join(peer);
@@ -650,7 +650,7 @@ namespace NetMQ.Zyre
         /// <param name="peer"></param>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        private ZreGroup LeavePeerGroup(ZrePeer peer, string groupName)
+        private ZyreGroup LeavePeerGroup(ZyrePeer peer, string groupName)
         {
             var group = RequirePeerGroup(groupName);
             group.Leave(peer);
@@ -674,7 +674,7 @@ namespace NetMQ.Zyre
                 return;
             }
             Debug.Assert(uuid != _uuid, $"({_name}) Our own message should not be coming back to us! {_uuid}");
-            ZrePeer peer;
+            ZyrePeer peer;
             if (!_peers.TryGetValue(uuid, out peer))
             {
                 _loggerDelegate?.Invoke($"Received Unknown Peer into _inbox uuid={uuid.ToShortString6()}");
@@ -814,7 +814,7 @@ namespace NetMQ.Zyre
                 return;
             }
             var endPoint = $"tcp://{beaconMessage.PeerHost}:{port}";
-            ZrePeer peer;
+            ZyrePeer peer;
             if (port > 0)
             {
                 peer = RequirePeer(uuid, endPoint);
@@ -838,13 +838,13 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="peer">the peer to ping</param>
         /// <returns>true if this peer should be removed</returns>
-        private bool PingPeer(ZrePeer peer)
+        private bool PingPeer(ZyrePeer peer)
         {
-            if (ZrePeer.CurrentTimeMilliseconds() >= peer.ExpiredAt)
+            if (ZyrePeer.CurrentTimeMilliseconds() >= peer.ExpiredAt)
             {
                 return true;
             }
-            if (ZrePeer.CurrentTimeMilliseconds() >= peer.EvasiveAt)
+            if (ZyrePeer.CurrentTimeMilliseconds() >= peer.EvasiveAt)
             {
                 // If peer is being evasive, force a TCP ping.
                 // ZeroMQTODO: do this only once for a peer in this state;
@@ -972,7 +972,7 @@ namespace NetMQ.Zyre
         {
             // Ping all peers and reap any expired ones
             // Don't remove them during the foreach loop
-            var peersToRemove = new List<ZrePeer>();
+            var peersToRemove = new List<ZyrePeer>();
             foreach (var peer in _peers.Values)
             {
                 var isToBeRemoved = PingPeer(peer);

@@ -61,7 +61,7 @@ namespace NetMQ.Zyre
 
             // Start node engine and wait for it to be ready
             // All node control is done through _actor
-            _actor = ZreNode.Create(outbox, loggerDelegate);
+            _actor = ZyreNode.Create(outbox, loggerDelegate);
             _inboxPoller = new NetMQPoller();
             _inbox.ReceiveReady += InboxReceiveReady;
             _inboxPoller.RunAsync();
