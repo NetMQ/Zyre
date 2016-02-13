@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using NetMQ;
 using NetMQ.Zyre;
 using NetMQ.Zyre.ZyreEvents;
 
@@ -192,22 +193,53 @@ namespace SamplePeer
 
         private void btnJoin_Click(object sender, EventArgs e)
         {
-
+            var groupName = txtGroupName.Text;
+            if (string.IsNullOrEmpty(groupName))
+            {
+                MessageBox.Show("You must enter a group name");
+                return;
+            }
+            _zyre.Join(groupName);
         }
 
         private void btnLeave_Click(object sender, EventArgs e)
         {
-
+            var groupName = txtGroupName.Text;
+            if (string.IsNullOrEmpty(groupName))
+            {
+                MessageBox.Show("You must enter a group name");
+                return;
+            }
+            _zyre.Leave(groupName);
         }
 
         private void btnWhisper_Click(object sender, EventArgs e)
         {
-
+            var chatMessage = txtWhisperMessage.Text;
+            if (string.IsNullOrEmpty(chatMessage))
+            {
+                MessageBox.Show("You must enter a chat message.");
+                return;
+            }
+            var msg = new NetMQMessage();
+            msg.Append(chatMessage);
+            //var guid = comboBoxPeersGuidShort.SelectedItem;
+            var guid = new Guid(); // TODO: make a comboBox for selection.
+            _zyre.Whisper(guid, msg);
         }
 
         private void btnShout_Click(object sender, EventArgs e)
         {
-
+            var chatMessage = txtWhisperMessage.Text;
+            if (string.IsNullOrEmpty(chatMessage))
+            {
+                MessageBox.Show("You must enter a chat message.");
+                return;
+            }
+            var msg = new NetMQMessage();
+            msg.Append(chatMessage);
+            var guid = new Guid(); // TODO: make a comboBox for selection.
+            _zyre.Shout("groupName", msg);
         }
     }
 }

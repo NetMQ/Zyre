@@ -31,15 +31,30 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-            this.label1 = new System.Windows.Forms.Label();
+            this.groupBoxShout = new System.Windows.Forms.GroupBox();
+            this.btnShout = new System.Windows.Forms.Button();
+            this.txtShoutMessage = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.groupBoxWhisper = new System.Windows.Forms.GroupBox();
+            this.comboBoxPeersGuidShort = new System.Windows.Forms.ComboBox();
+            this.txtWhisperMessage = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.btnWhisper = new System.Windows.Forms.Button();
+            this.groupBoxGroups = new System.Windows.Forms.GroupBox();
+            this.btnLeave = new System.Windows.Forms.Button();
             this.txtGroupName = new System.Windows.Forms.TextBox();
+            this.groupBoxPeerGroups = new System.Windows.Forms.GroupBox();
+            this.rtbPeerGroups = new System.Windows.Forms.RichTextBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.btnJoin = new System.Windows.Forms.Button();
             this.groupBoxMyGroups = new System.Windows.Forms.GroupBox();
             this.rtbMyGroups = new System.Windows.Forms.RichTextBox();
-            this.groupBoxPeerGroups = new System.Windows.Forms.GroupBox();
-            this.rtbPeerGroups = new System.Windows.Forms.RichTextBox();
             this.groupBoxConnectedPeers = new System.Windows.Forms.GroupBox();
             this.peerDataGridView = new System.Windows.Forms.DataGridView();
+            this.senderNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Address = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.senderUuidDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.peerBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.peerBindingNavigator = new System.Windows.Forms.BindingNavigator(this.components);
             this.bindingNavigatorAddNewItem = new System.Windows.Forms.ToolStripButton();
             this.bindingNavigatorCountItem = new System.Windows.Forms.ToolStripLabel();
@@ -58,34 +73,25 @@
             this.splitContainerLogging = new System.Windows.Forms.SplitContainer();
             this.rtbEventsLog = new System.Windows.Forms.RichTextBox();
             this.rtbNodeLog = new System.Windows.Forms.RichTextBox();
-            this.groupBoxGroups = new System.Windows.Forms.GroupBox();
-            this.btnLeave = new System.Windows.Forms.Button();
-            this.groupBoxChat = new System.Windows.Forms.GroupBox();
-            this.btnShout = new System.Windows.Forms.Button();
-            this.txtChatMessage = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.btnWhisper = new System.Windows.Forms.Button();
-            this.peerBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.senderNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Address = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.senderUuidDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.comboBoxPeerGroupNames = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
             this.splitContainerMain.Panel1.SuspendLayout();
             this.splitContainerMain.Panel2.SuspendLayout();
             this.splitContainerMain.SuspendLayout();
-            this.groupBoxMyGroups.SuspendLayout();
+            this.groupBoxShout.SuspendLayout();
+            this.groupBoxWhisper.SuspendLayout();
+            this.groupBoxGroups.SuspendLayout();
             this.groupBoxPeerGroups.SuspendLayout();
+            this.groupBoxMyGroups.SuspendLayout();
             this.groupBoxConnectedPeers.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerDataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.peerBindingNavigator)).BeginInit();
             this.peerBindingNavigator.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerLogging)).BeginInit();
             this.splitContainerLogging.Panel1.SuspendLayout();
             this.splitContainerLogging.Panel2.SuspendLayout();
             this.splitContainerLogging.SuspendLayout();
-            this.groupBoxGroups.SuspendLayout();
-            this.groupBoxChat.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainerMain
@@ -98,7 +104,8 @@
             // splitContainerMain.Panel1
             // 
             this.splitContainerMain.Panel1.AutoScroll = true;
-            this.splitContainerMain.Panel1.Controls.Add(this.groupBoxChat);
+            this.splitContainerMain.Panel1.Controls.Add(this.groupBoxShout);
+            this.splitContainerMain.Panel1.Controls.Add(this.groupBoxWhisper);
             this.splitContainerMain.Panel1.Controls.Add(this.groupBoxGroups);
             this.splitContainerMain.Panel1.Controls.Add(this.groupBoxConnectedPeers);
             this.splitContainerMain.Panel1.Controls.Add(this.btnStop);
@@ -108,8 +115,149 @@
             // 
             this.splitContainerMain.Panel2.Controls.Add(this.splitContainerLogging);
             this.splitContainerMain.Size = new System.Drawing.Size(1136, 662);
-            this.splitContainerMain.SplitterDistance = 312;
+            this.splitContainerMain.SplitterDistance = 374;
             this.splitContainerMain.TabIndex = 0;
+            // 
+            // groupBoxShout
+            // 
+            this.groupBoxShout.Controls.Add(this.comboBoxPeerGroupNames);
+            this.groupBoxShout.Controls.Add(this.btnShout);
+            this.groupBoxShout.Controls.Add(this.txtShoutMessage);
+            this.groupBoxShout.Controls.Add(this.label3);
+            this.groupBoxShout.Location = new System.Drawing.Point(12, 286);
+            this.groupBoxShout.Name = "groupBoxShout";
+            this.groupBoxShout.Size = new System.Drawing.Size(525, 83);
+            this.groupBoxShout.TabIndex = 14;
+            this.groupBoxShout.TabStop = false;
+            this.groupBoxShout.Text = "Shout";
+            // 
+            // btnShout
+            // 
+            this.btnShout.Location = new System.Drawing.Point(6, 45);
+            this.btnShout.Name = "btnShout";
+            this.btnShout.Size = new System.Drawing.Size(75, 23);
+            this.btnShout.TabIndex = 14;
+            this.btnShout.Text = "Shout";
+            this.btnShout.UseVisualStyleBackColor = true;
+            this.btnShout.Click += new System.EventHandler(this.btnShout_Click);
+            // 
+            // txtShoutMessage
+            // 
+            this.txtShoutMessage.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtShoutMessage.Location = new System.Drawing.Point(96, 48);
+            this.txtShoutMessage.Name = "txtShoutMessage";
+            this.txtShoutMessage.Size = new System.Drawing.Size(417, 20);
+            this.txtShoutMessage.TabIndex = 11;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(93, 21);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(84, 13);
+            this.label3.TabIndex = 12;
+            this.label3.Text = "Shout Message:";
+            // 
+            // groupBoxWhisper
+            // 
+            this.groupBoxWhisper.Controls.Add(this.comboBoxPeersGuidShort);
+            this.groupBoxWhisper.Controls.Add(this.txtWhisperMessage);
+            this.groupBoxWhisper.Controls.Add(this.label2);
+            this.groupBoxWhisper.Controls.Add(this.btnWhisper);
+            this.groupBoxWhisper.Location = new System.Drawing.Point(12, 197);
+            this.groupBoxWhisper.Name = "groupBoxWhisper";
+            this.groupBoxWhisper.Size = new System.Drawing.Size(525, 83);
+            this.groupBoxWhisper.TabIndex = 10;
+            this.groupBoxWhisper.TabStop = false;
+            this.groupBoxWhisper.Text = "Whisper";
+            // 
+            // comboBoxPeersGuidShort
+            // 
+            this.comboBoxPeersGuidShort.FormattingEnabled = true;
+            this.comboBoxPeersGuidShort.Location = new System.Drawing.Point(6, 19);
+            this.comboBoxPeersGuidShort.Name = "comboBoxPeersGuidShort";
+            this.comboBoxPeersGuidShort.Size = new System.Drawing.Size(75, 21);
+            this.comboBoxPeersGuidShort.TabIndex = 13;
+            // 
+            // txtWhisperMessage
+            // 
+            this.txtWhisperMessage.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtWhisperMessage.Location = new System.Drawing.Point(96, 48);
+            this.txtWhisperMessage.Name = "txtWhisperMessage";
+            this.txtWhisperMessage.Size = new System.Drawing.Size(417, 20);
+            this.txtWhisperMessage.TabIndex = 11;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(93, 24);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(95, 13);
+            this.label2.TabIndex = 12;
+            this.label2.Text = "Whisper Message:";
+            // 
+            // btnWhisper
+            // 
+            this.btnWhisper.Location = new System.Drawing.Point(6, 46);
+            this.btnWhisper.Name = "btnWhisper";
+            this.btnWhisper.Size = new System.Drawing.Size(75, 23);
+            this.btnWhisper.TabIndex = 10;
+            this.btnWhisper.Text = "Whisper";
+            this.btnWhisper.UseVisualStyleBackColor = true;
+            this.btnWhisper.Click += new System.EventHandler(this.btnWhisper_Click);
+            // 
+            // groupBoxGroups
+            // 
+            this.groupBoxGroups.Controls.Add(this.btnLeave);
+            this.groupBoxGroups.Controls.Add(this.txtGroupName);
+            this.groupBoxGroups.Controls.Add(this.groupBoxPeerGroups);
+            this.groupBoxGroups.Controls.Add(this.label1);
+            this.groupBoxGroups.Controls.Add(this.btnJoin);
+            this.groupBoxGroups.Controls.Add(this.groupBoxMyGroups);
+            this.groupBoxGroups.Location = new System.Drawing.Point(546, 12);
+            this.groupBoxGroups.Name = "groupBoxGroups";
+            this.groupBoxGroups.Size = new System.Drawing.Size(270, 268);
+            this.groupBoxGroups.TabIndex = 9;
+            this.groupBoxGroups.TabStop = false;
+            this.groupBoxGroups.Text = "Groups";
+            // 
+            // btnLeave
+            // 
+            this.btnLeave.Location = new System.Drawing.Point(20, 233);
+            this.btnLeave.Name = "btnLeave";
+            this.btnLeave.Size = new System.Drawing.Size(75, 23);
+            this.btnLeave.TabIndex = 9;
+            this.btnLeave.Text = "Leave";
+            this.btnLeave.UseVisualStyleBackColor = true;
+            this.btnLeave.Click += new System.EventHandler(this.btnLeave_Click);
+            // 
+            // txtGroupName
+            // 
+            this.txtGroupName.Location = new System.Drawing.Point(104, 233);
+            this.txtGroupName.Name = "txtGroupName";
+            this.txtGroupName.Size = new System.Drawing.Size(150, 20);
+            this.txtGroupName.TabIndex = 7;
+            // 
+            // groupBoxPeerGroups
+            // 
+            this.groupBoxPeerGroups.Controls.Add(this.rtbPeerGroups);
+            this.groupBoxPeerGroups.Location = new System.Drawing.Point(17, 19);
+            this.groupBoxPeerGroups.Name = "groupBoxPeerGroups";
+            this.groupBoxPeerGroups.Size = new System.Drawing.Size(117, 182);
+            this.groupBoxPeerGroups.TabIndex = 4;
+            this.groupBoxPeerGroups.TabStop = false;
+            this.groupBoxPeerGroups.Text = "Peer Groups";
+            // 
+            // rtbPeerGroups
+            // 
+            this.rtbPeerGroups.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rtbPeerGroups.Location = new System.Drawing.Point(3, 16);
+            this.rtbPeerGroups.Name = "rtbPeerGroups";
+            this.rtbPeerGroups.Size = new System.Drawing.Size(111, 163);
+            this.rtbPeerGroups.TabIndex = 3;
+            this.rtbPeerGroups.Text = "";
             // 
             // label1
             // 
@@ -119,13 +267,6 @@
             this.label1.Size = new System.Drawing.Size(70, 13);
             this.label1.TabIndex = 8;
             this.label1.Text = "Group Name:";
-            // 
-            // txtGroupName
-            // 
-            this.txtGroupName.Location = new System.Drawing.Point(104, 233);
-            this.txtGroupName.Name = "txtGroupName";
-            this.txtGroupName.Size = new System.Drawing.Size(150, 20);
-            this.txtGroupName.TabIndex = 7;
             // 
             // btnJoin
             // 
@@ -155,25 +296,6 @@
             this.rtbMyGroups.Size = new System.Drawing.Size(111, 163);
             this.rtbMyGroups.TabIndex = 3;
             this.rtbMyGroups.Text = "";
-            // 
-            // groupBoxPeerGroups
-            // 
-            this.groupBoxPeerGroups.Controls.Add(this.rtbPeerGroups);
-            this.groupBoxPeerGroups.Location = new System.Drawing.Point(17, 19);
-            this.groupBoxPeerGroups.Name = "groupBoxPeerGroups";
-            this.groupBoxPeerGroups.Size = new System.Drawing.Size(117, 182);
-            this.groupBoxPeerGroups.TabIndex = 4;
-            this.groupBoxPeerGroups.TabStop = false;
-            this.groupBoxPeerGroups.Text = "Peer Groups";
-            // 
-            // rtbPeerGroups
-            // 
-            this.rtbPeerGroups.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rtbPeerGroups.Location = new System.Drawing.Point(3, 16);
-            this.rtbPeerGroups.Name = "rtbPeerGroups";
-            this.rtbPeerGroups.Size = new System.Drawing.Size(111, 163);
-            this.rtbPeerGroups.TabIndex = 3;
-            this.rtbPeerGroups.Text = "";
             // 
             // groupBoxConnectedPeers
             // 
@@ -207,6 +329,36 @@
             this.peerDataGridView.Size = new System.Drawing.Size(429, 138);
             this.peerDataGridView.TabIndex = 0;
             this.peerDataGridView.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.peerDataGridView_DataError);
+            // 
+            // senderNameDataGridViewTextBoxColumn
+            // 
+            this.senderNameDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.senderNameDataGridViewTextBoxColumn.DataPropertyName = "SenderName";
+            this.senderNameDataGridViewTextBoxColumn.HeaderText = "SenderName";
+            this.senderNameDataGridViewTextBoxColumn.Name = "senderNameDataGridViewTextBoxColumn";
+            this.senderNameDataGridViewTextBoxColumn.ReadOnly = true;
+            this.senderNameDataGridViewTextBoxColumn.Width = 94;
+            // 
+            // Address
+            // 
+            this.Address.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.Address.DataPropertyName = "Address";
+            this.Address.HeaderText = "Address";
+            this.Address.Name = "Address";
+            this.Address.ReadOnly = true;
+            this.Address.Width = 70;
+            // 
+            // senderUuidDataGridViewTextBoxColumn
+            // 
+            this.senderUuidDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.senderUuidDataGridViewTextBoxColumn.DataPropertyName = "SenderUuid";
+            this.senderUuidDataGridViewTextBoxColumn.HeaderText = "SenderUuid";
+            this.senderUuidDataGridViewTextBoxColumn.Name = "senderUuidDataGridViewTextBoxColumn";
+            this.senderUuidDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // peerBindingSource
+            // 
+            this.peerBindingSource.DataSource = typeof(SamplePeer.Peer);
             // 
             // peerBindingNavigator
             // 
@@ -366,8 +518,8 @@
             // splitContainerLogging.Panel2
             // 
             this.splitContainerLogging.Panel2.Controls.Add(this.rtbNodeLog);
-            this.splitContainerLogging.Size = new System.Drawing.Size(1136, 346);
-            this.splitContainerLogging.SplitterDistance = 160;
+            this.splitContainerLogging.Size = new System.Drawing.Size(1136, 284);
+            this.splitContainerLogging.SplitterDistance = 131;
             this.splitContainerLogging.TabIndex = 0;
             // 
             // rtbEventsLog
@@ -375,7 +527,7 @@
             this.rtbEventsLog.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtbEventsLog.Location = new System.Drawing.Point(0, 0);
             this.rtbEventsLog.Name = "rtbEventsLog";
-            this.rtbEventsLog.Size = new System.Drawing.Size(1136, 160);
+            this.rtbEventsLog.Size = new System.Drawing.Size(1136, 131);
             this.rtbEventsLog.TabIndex = 0;
             this.rtbEventsLog.Text = "";
             // 
@@ -384,115 +536,17 @@
             this.rtbNodeLog.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtbNodeLog.Location = new System.Drawing.Point(0, 0);
             this.rtbNodeLog.Name = "rtbNodeLog";
-            this.rtbNodeLog.Size = new System.Drawing.Size(1136, 182);
+            this.rtbNodeLog.Size = new System.Drawing.Size(1136, 149);
             this.rtbNodeLog.TabIndex = 0;
             this.rtbNodeLog.Text = "";
             // 
-            // groupBoxGroups
+            // comboBoxPeerGroupNames
             // 
-            this.groupBoxGroups.Controls.Add(this.btnLeave);
-            this.groupBoxGroups.Controls.Add(this.txtGroupName);
-            this.groupBoxGroups.Controls.Add(this.groupBoxPeerGroups);
-            this.groupBoxGroups.Controls.Add(this.label1);
-            this.groupBoxGroups.Controls.Add(this.btnJoin);
-            this.groupBoxGroups.Controls.Add(this.groupBoxMyGroups);
-            this.groupBoxGroups.Location = new System.Drawing.Point(591, 12);
-            this.groupBoxGroups.Name = "groupBoxGroups";
-            this.groupBoxGroups.Size = new System.Drawing.Size(270, 268);
-            this.groupBoxGroups.TabIndex = 9;
-            this.groupBoxGroups.TabStop = false;
-            this.groupBoxGroups.Text = "Groups";
-            // 
-            // btnLeave
-            // 
-            this.btnLeave.Location = new System.Drawing.Point(20, 233);
-            this.btnLeave.Name = "btnLeave";
-            this.btnLeave.Size = new System.Drawing.Size(75, 23);
-            this.btnLeave.TabIndex = 9;
-            this.btnLeave.Text = "Leave";
-            this.btnLeave.UseVisualStyleBackColor = true;
-            this.btnLeave.Click += new System.EventHandler(this.btnLeave_Click);
-            // 
-            // groupBoxChat
-            // 
-            this.groupBoxChat.Controls.Add(this.btnShout);
-            this.groupBoxChat.Controls.Add(this.txtChatMessage);
-            this.groupBoxChat.Controls.Add(this.label2);
-            this.groupBoxChat.Controls.Add(this.btnWhisper);
-            this.groupBoxChat.Location = new System.Drawing.Point(12, 197);
-            this.groupBoxChat.Name = "groupBoxChat";
-            this.groupBoxChat.Size = new System.Drawing.Size(525, 83);
-            this.groupBoxChat.TabIndex = 10;
-            this.groupBoxChat.TabStop = false;
-            this.groupBoxChat.Text = "Chat";
-            // 
-            // btnShout
-            // 
-            this.btnShout.Location = new System.Drawing.Point(6, 48);
-            this.btnShout.Name = "btnShout";
-            this.btnShout.Size = new System.Drawing.Size(75, 23);
-            this.btnShout.TabIndex = 13;
-            this.btnShout.Text = "Shout";
-            this.btnShout.UseVisualStyleBackColor = true;
-            this.btnShout.Click += new System.EventHandler(this.btnShout_Click);
-            // 
-            // txtChatMessage
-            // 
-            this.txtChatMessage.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtChatMessage.Location = new System.Drawing.Point(90, 48);
-            this.txtChatMessage.Name = "txtChatMessage";
-            this.txtChatMessage.Size = new System.Drawing.Size(423, 20);
-            this.txtChatMessage.TabIndex = 11;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(87, 24);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(78, 13);
-            this.label2.TabIndex = 12;
-            this.label2.Text = "Chat Message:";
-            // 
-            // btnWhisper
-            // 
-            this.btnWhisper.Location = new System.Drawing.Point(6, 19);
-            this.btnWhisper.Name = "btnWhisper";
-            this.btnWhisper.Size = new System.Drawing.Size(75, 23);
-            this.btnWhisper.TabIndex = 10;
-            this.btnWhisper.Text = "Whisper";
-            this.btnWhisper.UseVisualStyleBackColor = true;
-            this.btnWhisper.Click += new System.EventHandler(this.btnWhisper_Click);
-            // 
-            // peerBindingSource
-            // 
-            this.peerBindingSource.DataSource = typeof(SamplePeer.Peer);
-            // 
-            // senderNameDataGridViewTextBoxColumn
-            // 
-            this.senderNameDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.senderNameDataGridViewTextBoxColumn.DataPropertyName = "SenderName";
-            this.senderNameDataGridViewTextBoxColumn.HeaderText = "SenderName";
-            this.senderNameDataGridViewTextBoxColumn.Name = "senderNameDataGridViewTextBoxColumn";
-            this.senderNameDataGridViewTextBoxColumn.ReadOnly = true;
-            this.senderNameDataGridViewTextBoxColumn.Width = 94;
-            // 
-            // Address
-            // 
-            this.Address.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.Address.DataPropertyName = "Address";
-            this.Address.HeaderText = "Address";
-            this.Address.Name = "Address";
-            this.Address.ReadOnly = true;
-            this.Address.Width = 70;
-            // 
-            // senderUuidDataGridViewTextBoxColumn
-            // 
-            this.senderUuidDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.senderUuidDataGridViewTextBoxColumn.DataPropertyName = "SenderUuid";
-            this.senderUuidDataGridViewTextBoxColumn.HeaderText = "SenderUuid";
-            this.senderUuidDataGridViewTextBoxColumn.Name = "senderUuidDataGridViewTextBoxColumn";
-            this.senderUuidDataGridViewTextBoxColumn.ReadOnly = true;
+            this.comboBoxPeerGroupNames.FormattingEnabled = true;
+            this.comboBoxPeerGroupNames.Location = new System.Drawing.Point(6, 18);
+            this.comboBoxPeerGroupNames.Name = "comboBoxPeerGroupNames";
+            this.comboBoxPeerGroupNames.Size = new System.Drawing.Size(75, 21);
+            this.comboBoxPeerGroupNames.TabIndex = 14;
             // 
             // MainForm
             // 
@@ -508,11 +562,18 @@
             this.splitContainerMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
             this.splitContainerMain.ResumeLayout(false);
-            this.groupBoxMyGroups.ResumeLayout(false);
+            this.groupBoxShout.ResumeLayout(false);
+            this.groupBoxShout.PerformLayout();
+            this.groupBoxWhisper.ResumeLayout(false);
+            this.groupBoxWhisper.PerformLayout();
+            this.groupBoxGroups.ResumeLayout(false);
+            this.groupBoxGroups.PerformLayout();
             this.groupBoxPeerGroups.ResumeLayout(false);
+            this.groupBoxMyGroups.ResumeLayout(false);
             this.groupBoxConnectedPeers.ResumeLayout(false);
             this.groupBoxConnectedPeers.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerDataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.peerBindingNavigator)).EndInit();
             this.peerBindingNavigator.ResumeLayout(false);
             this.peerBindingNavigator.PerformLayout();
@@ -520,11 +581,6 @@
             this.splitContainerLogging.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerLogging)).EndInit();
             this.splitContainerLogging.ResumeLayout(false);
-            this.groupBoxGroups.ResumeLayout(false);
-            this.groupBoxGroups.PerformLayout();
-            this.groupBoxChat.ResumeLayout(false);
-            this.groupBoxChat.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -562,14 +618,19 @@
         private System.Windows.Forms.RichTextBox rtbPeerGroups;
         private System.Windows.Forms.GroupBox groupBoxGroups;
         private System.Windows.Forms.Button btnLeave;
-        private System.Windows.Forms.GroupBox groupBoxChat;
-        private System.Windows.Forms.Button btnShout;
-        private System.Windows.Forms.TextBox txtChatMessage;
+        private System.Windows.Forms.GroupBox groupBoxWhisper;
+        private System.Windows.Forms.TextBox txtWhisperMessage;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button btnWhisper;
         private System.Windows.Forms.DataGridViewTextBoxColumn Address;
         private System.Windows.Forms.DataGridViewTextBoxColumn senderUuidDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn senderNameDataGridViewTextBoxColumn;
+        private System.Windows.Forms.GroupBox groupBoxShout;
+        private System.Windows.Forms.TextBox txtShoutMessage;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ComboBox comboBoxPeersGuidShort;
+        private System.Windows.Forms.Button btnShout;
+        private System.Windows.Forms.ComboBox comboBoxPeerGroupNames;
     }
 }
 
