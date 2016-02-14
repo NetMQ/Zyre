@@ -34,7 +34,7 @@ namespace NetMQ.Zyre
         /// Outbox back to application
         /// We send all Zyre messages to the API via the outbox, e.g. from ReceivePeer(), Start(), Stop(), 
         /// </summary>
-        private PairSocket _outbox;
+        private readonly PairSocket _outbox;
 
         /// <summary>
         /// Beacon port number
@@ -54,7 +54,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Beacon
         /// </summary>
-        private NetMQBeacon _beacon;
+        private readonly NetMQBeacon _beacon;
 
         /// <summary>
         /// Our UUID (guid), 16 bytes when transmitted. 
@@ -408,7 +408,7 @@ namespace NetMQ.Zyre
                     // Get group to send message to
                     var groupNameShout = request.Pop().ConvertToString();
                     ZyreGroup group;
-                    if (_ownGroups.TryGetValue(groupNameShout, out group))
+                    if (_peerGroups.TryGetValue(groupNameShout, out group))
                     {
                         var msg = new ZreMsg
                         {
@@ -424,6 +424,8 @@ namespace NetMQ.Zyre
                     if (!_ownGroups.TryGetValue(groupNameJoin, out groupJoin))
                     {
                         // Only send if we're not already in group
+                        var groupJoined = ZyreGroup.NewGroup(groupNameJoin, _ownGroups);
+
                         // Update status before sending command
                         _status = _status == UbyteMax ? (byte)0 : ++_status;
                         var msg = new ZreMsg

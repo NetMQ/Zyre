@@ -19,15 +19,23 @@ namespace SamplePeer
     {
         private readonly string _name;
         private readonly Zyre _zyre;
-        private readonly Dictionary<Guid, Peer> _connectedPeers;
+        private readonly List<Peer> _connectedPeers;
+        private readonly List<Group> _ownGroups;
+        private readonly List<Group> _peerGroups;
         private readonly Guid _uuid;
         private string _endpoint;
 
         public MainForm(string name)
         {
             InitializeComponent();
+            lblMessageReceived.Text = "";
             btnStop.Enabled = false;
-            _connectedPeers = new Dictionary<Guid, Peer>();
+            _connectedPeers = new List<Peer>();
+            peerBindingSource.DataSource = _connectedPeers;
+            _ownGroups = new List<Group>();
+            ownGroupBindingSource.DataSource = _ownGroups;
+            _peerGroups = new List<Group>();
+            peerGroupBindingSource.DataSource = _peerGroups;
             _zyre = new Zyre(_name, NodeLogger);
             if (!string.IsNullOrEmpty(name))
             {
@@ -48,22 +56,28 @@ namespace SamplePeer
 
         private void ZyreShoutEvent(object sender, ZyreEventShout e)
         {
-            EventsLogger($"Shout: {e.SenderName} {e.SenderUuid.ToShortString6()} with {e.Content.FrameCount} message frames shouted to group:{e.GroupName}");
+            var msg = e.Content.Pop().ConvertToString();
+            lblMessageReceived.Text = msg;
+            EventsLogger($"Shout: {e.SenderName} {e.SenderUuid.ToShortString6()} shouted message {msg} to group:{e.GroupName}");
         }
 
         private void ZyreWhisperEvent(object sender, ZyreEventWhisper e)
         {
-            EventsLogger($"Whisper: {e.SenderName} {e.SenderUuid.ToShortString6()} with {e.Content.FrameCount} message frames");
+            var msg = e.Content.Pop().ConvertToString();
+            lblMessageReceived.Text = msg;
+            EventsLogger($"Whisper: {e.SenderName} {e.SenderUuid.ToShortString6()} whispered message {msg}");
         }
 
         private void ZyreJoinEvent(object sender, ZyreEventJoin e)
         {
             EventsLogger($"Join: {e.SenderName} {e.SenderUuid.ToShortString6()} Group:{e.GroupName}");
+            UpdateAndShowGroups();
         }
 
         private void ZyreLeaveEvent(object sender, ZyreEventLeave e)
         {
             EventsLogger($"Leave: {e.SenderName} {e.SenderUuid.ToShortString6()} Group:{e.GroupName}");
+            UpdateAndShowGroups();
         }
 
         private void ZyreEvasiveEvent(object sender, ZyreEventEvasive e)
@@ -73,23 +87,22 @@ namespace SamplePeer
 
         private void ZyreExitEvent(object sender, ZyreEventExit e)
         {
-            _connectedPeers.Remove(e.SenderUuid);
-            PeerBindingSourceResetBindings();
+            _connectedPeers.RemoveAll(x => x.SenderUuid == e.SenderUuid);
             EventsLogger($"Exited: {e.SenderName} {e.SenderUuid.ToShortString6()}");
+            UpdateAndShowGroups();
         }
 
         private void ZyreStopEvent(object sender, ZyreEventStop e)
         {
-            _connectedPeers.Remove(e.SenderUuid);
-            PeerBindingSourceResetBindings();
+            _connectedPeers.RemoveAll(x => x.SenderUuid == e.SenderUuid);
             EventsLogger($"Stopped: {e.SenderName} {e.SenderUuid.ToShortString6()}");
+            UpdateAndShowGroups();
         }
 
         private void ZyreEnterEvent(object sender, ZyreEventEnter e)
         {
             var peer = new Peer(e.SenderName, e.SenderUuid, e.Address);
-            _connectedPeers.Add(e.SenderUuid, peer);
-            PeerBindingSourceResetBindings();
+            _connectedPeers.Add(peer);
             EventsLogger($"Entered: {e.SenderName} {e.SenderUuid.ToShortString6()} at {e.Address} with {e.Headers.Count} headers");
             if (e.Headers.Count > 0)
             {
@@ -100,18 +113,7 @@ namespace SamplePeer
                 }
                 EventsLogger(sb.ToString());
             }
-        }
-
-        private void PeerBindingSourceResetBindings()
-        {
-            if (InvokeRequired)
-            {
-                this.BeginInvoke(new MethodInvoker(PeerBindingSourceResetBindings));
-            }
-            else
-            {
-                peerBindingSource.DataSource = _connectedPeers.Values.ToList();
-            }
+            UpdateAndShowGroups();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -148,7 +150,6 @@ namespace SamplePeer
             _endpoint = null;  // every time we start, we bind our RouterSocket to a new port
             DisplayTitle();
             _connectedPeers.Clear();
-            PeerBindingSourceResetBindings();
         }
         
         public void NodeLogger(string str)
@@ -173,7 +174,7 @@ namespace SamplePeer
         {
             if (rtb.InvokeRequired)
             {
-                this.BeginInvoke(new MethodInvoker(() => Logger(rtb, msg)));
+                BeginInvoke(new MethodInvoker(() => Logger(rtb, msg)));
             }
             else
             {
@@ -186,11 +187,6 @@ namespace SamplePeer
             }
         }
 
-        private void peerDataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
-        {
-            Utility.HandleDataGridViewError(sender, e);
-        }
-
         private void btnJoin_Click(object sender, EventArgs e)
         {
             var groupName = txtGroupName.Text;
@@ -200,6 +196,8 @@ namespace SamplePeer
                 return;
             }
             _zyre.Join(groupName);
+            Thread.Sleep(10);
+            UpdateAndShowGroups();
         }
 
         private void btnLeave_Click(object sender, EventArgs e)
@@ -211,20 +209,33 @@ namespace SamplePeer
                 return;
             }
             _zyre.Leave(groupName);
+            Thread.Sleep(10);
+            UpdateAndShowGroups();
         }
 
         private void btnWhisper_Click(object sender, EventArgs e)
         {
+            var selectedRowCount = peerDataGridView.Rows.GetRowCount(DataGridViewElementStates.Selected);
+            if (selectedRowCount == 0)
+            {
+                MessageBox.Show("You must select a row in the Connected Peers list");
+                return;
+            }
             var chatMessage = txtWhisperMessage.Text;
             if (string.IsNullOrEmpty(chatMessage))
             {
                 MessageBox.Show("You must enter a chat message.");
                 return;
             }
+            var uuid = peerGroupDataGridView.Rows[0].Cells["SenderUuid"].ToString();
+            Guid guid;
+            if (!Guid.TryParse(uuid, out guid))
+            {
+                MessageBox.Show("Unable to convert SenderUuid to Guid");
+                return;
+            }
             var msg = new NetMQMessage();
             msg.Append(chatMessage);
-            //var guid = comboBoxPeersGuidShort.SelectedItem;
-            var guid = new Guid(); // TODO: make a comboBox for selection.
             _zyre.Whisper(guid, msg);
         }
 
@@ -240,6 +251,72 @@ namespace SamplePeer
             msg.Append(chatMessage);
             var guid = new Guid(); // TODO: make a comboBox for selection.
             _zyre.Shout("groupName", msg);
+        }
+
+        private void UpdateAndShowGroups()
+        {
+            if (comboBoxPeerGroupNames.InvokeRequired)
+            {
+                BeginInvoke(new MethodInvoker(UpdateAndShowGroups));
+            }
+            else
+            {
+                var ownGroups =_zyre.OwnGroups();
+                _ownGroups.Clear();
+                foreach (var ownGroup in ownGroups)
+                {
+                    _ownGroups.Add(new Group(ownGroup));
+                }
+                var peerGroups = _zyre.OwnGroups();
+                _peerGroups.Clear();
+                foreach (var peerGroup in peerGroups)
+                {
+                    _peerGroups.Add(new Group(peerGroup));
+                }
+
+                peerBindingSource.ResetBindings(false);
+                ownGroupBindingSource.ResetBindings(false);
+                peerGroupBindingSource.ResetBindings(false);
+            }
+        }
+
+        /// <summary>
+        /// Provide generic error handling for a DataGridView error
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void peerDataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            var dgv = (DataGridView)sender;
+            var senderName = dgv.Name;
+            var senderError = senderName + "_DataError()";
+            MessageBox.Show("Error happened " + e.Context.ToString() + "\n" + e.Exception, senderError);
+
+            if (e.Context == DataGridViewDataErrorContexts.Commit)
+            {
+                MessageBox.Show("Commit error", senderError);
+            }
+            if (e.Context == DataGridViewDataErrorContexts.CurrentCellChange)
+            {
+                MessageBox.Show("Cell change", senderError);
+            }
+            if (e.Context == DataGridViewDataErrorContexts.Parsing)
+            {
+                MessageBox.Show("Parsing error", senderError);
+            }
+            if (e.Context == DataGridViewDataErrorContexts.LeaveControl)
+            {
+                MessageBox.Show("Leave control error", senderError);
+            }
+
+            if ((e.Exception) is System.Data.ConstraintException)
+            {
+                var view = (DataGridView)sender;
+                view.Rows[e.RowIndex].ErrorText = "an error";
+                view.Rows[e.RowIndex].Cells[e.ColumnIndex].ErrorText = "an error";
+
+                e.ThrowException = false;
+            }
         }
     }
 }
