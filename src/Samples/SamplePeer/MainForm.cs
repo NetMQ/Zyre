@@ -249,7 +249,6 @@ namespace SamplePeer
             }
             var msg = new NetMQMessage();
             msg.Append(chatMessage);
-            var guid = new Guid(); // TODO: make a comboBox for selection.
             _zyre.Shout("groupName", msg);
         }
 

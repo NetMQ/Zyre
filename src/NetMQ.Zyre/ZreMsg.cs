@@ -1015,7 +1015,8 @@ namespace NetMQ.Zyre
         /// 	...on the other hand, it appears that zeromq/zyre also supports multi-frame contents, as per the top of zyre.c
         ///     This C# implementation allows multi-frame contents.
         /// </summary>
-        public void Send(IOutgoingSocket output)
+        /// <returns>true if message was successfully sent</returns>
+        public bool Send(IOutgoingSocket output)
         {
             if (output is RouterSocket)
                 output.SendMoreFrame(RoutingId);
@@ -1088,7 +1089,10 @@ namespace NetMQ.Zyre
 
                 //  Send the data frame				
                 var more = Id == MessageId.Whisper || Id == MessageId.Shout;
-                output.TrySend(ref msg, TimeSpan.Zero, more);
+                if (!output.TrySend(ref msg, TimeSpan.Zero, more))
+                {
+                    return false;
+                }
 
                 // Send message content for types with content
                 switch (Id)
@@ -1110,6 +1114,7 @@ namespace NetMQ.Zyre
                         output.TrySendMultipartMessage(Shout.Content);
                         break;
                 }
+                return true;
             }
             finally
             {
@@ -1136,7 +1141,8 @@ namespace NetMQ.Zyre
         /// <param name="status"></param>
         /// <param name="name"></param>
         /// <param name="headers"></param>
-        public static void SendHello(IOutgoingSocket socket, string endpoint, List<string> groups, byte status, string name, Dictionary<string, string> headers)
+        /// <returns>true if message was successfully sent</returns>
+        public static bool SendHello(IOutgoingSocket socket, string endpoint, List<string> groups, byte status, string name, Dictionary<string, string> headers)
         {
             var msg = new ZreMsg
             {
@@ -1150,7 +1156,7 @@ namespace NetMQ.Zyre
                     Headers = headers
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         /// <summary>
@@ -1163,7 +1169,8 @@ namespace NetMQ.Zyre
         /// <param name="socket"></param>
         /// <param name="sequence"></param>
         /// <param name="content">See warning above</param>
-        public static void SendWhisper(IOutgoingSocket socket, ushort sequence, NetMQMessage content)
+        /// <returns>true if message was successfully sent</returns>
+        public static bool SendWhisper(IOutgoingSocket socket, ushort sequence, NetMQMessage content)
         {
             var msg = new ZreMsg
             {
@@ -1175,7 +1182,7 @@ namespace NetMQ.Zyre
                     Content = content
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         /// <summary>
@@ -1188,7 +1195,8 @@ namespace NetMQ.Zyre
         /// <param name="socket"></param>
         /// <param name="sequence"></param>
         /// <param name="content">See warning above</param>
-        public static void SendShout(IOutgoingSocket socket, ushort sequence, NetMQMessage content)
+        /// <returns>true if message was successfully sent</returns>
+        public static bool SendShout(IOutgoingSocket socket, ushort sequence, NetMQMessage content)
         {
             var msg = new ZreMsg
             {
@@ -1200,7 +1208,7 @@ namespace NetMQ.Zyre
                     Content = content
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         /// <summary>
@@ -1210,7 +1218,8 @@ namespace NetMQ.Zyre
         /// <param name="sequence"></param>
         /// <param name="group"></param>
         /// <param name="status"></param>
-        public static void SendJoin(IOutgoingSocket socket, ushort sequence, string group, byte status)
+        /// <returns>true if message was successfully sent</returns>
+        public static bool SendJoin(IOutgoingSocket socket, ushort sequence, string group, byte status)
         {
             var msg = new ZreMsg
             {
@@ -1223,7 +1232,7 @@ namespace NetMQ.Zyre
                     Status = status,
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         /// <summary>
@@ -1233,7 +1242,7 @@ namespace NetMQ.Zyre
         /// <param name="sequence"></param>
         /// <param name="group"></param>
         /// <param name="status"></param>
-        public static void SendLeave(IOutgoingSocket socket, ushort sequence, string group, byte status)
+        public static bool SendLeave(IOutgoingSocket socket, ushort sequence, string group, byte status)
         {
             var msg = new ZreMsg
             {
@@ -1246,7 +1255,7 @@ namespace NetMQ.Zyre
                     Status = status,
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         /// <summary>
@@ -1254,7 +1263,8 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="sequence"></param>
-        public static void SendPing(IOutgoingSocket socket, ushort sequence)
+        /// <returns>true if message was successfully sent</returns>
+        public static bool SendPing(IOutgoingSocket socket, ushort sequence)
         {
             var msg = new ZreMsg
             {
@@ -1265,7 +1275,7 @@ namespace NetMQ.Zyre
                     Sequence = sequence,
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         /// <summary>
@@ -1273,7 +1283,8 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="sequence"></param>
-        public static void SendPingOk(IOutgoingSocket socket, ushort sequence)
+        /// <returns>true if message was successfully sent</returns>
+        public static bool SendPingOk(IOutgoingSocket socket, ushort sequence)
         {
             var msg = new ZreMsg
             {
@@ -1284,7 +1295,7 @@ namespace NetMQ.Zyre
                     Sequence = sequence,
                 }
             };
-            msg.Send(socket);
+            return msg.Send(socket);
         }
 
         #endregion

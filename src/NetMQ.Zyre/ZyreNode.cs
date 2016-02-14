@@ -680,7 +680,7 @@ namespace NetMQ.Zyre
             group.Join(peer);
 
             // Now tell the caller about the peer joined group
-            _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(groupName);
+            _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToByteArray()).SendMoreFrame(peer.Name).SendFrame(groupName);
             _loggerDelegate?.Invoke($"JOIN name={peer.Name} group={groupName}");
            return group;
         }
@@ -697,7 +697,7 @@ namespace NetMQ.Zyre
             group.Leave(peer);
 
             // Now tell the caller about the peer left group
-            _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToString()).SendMoreFrame(peer.Name).SendFrame(groupName);
+            _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToByteArray()).SendMoreFrame(peer.Name).SendFrame(groupName);
             _loggerDelegate?.Invoke($"LEAVE name={peer.Name} group={groupName}");
             return group;
         }

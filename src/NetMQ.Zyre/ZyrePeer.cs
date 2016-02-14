@@ -165,8 +165,11 @@ namespace NetMQ.Zyre
             {
                 msg.Sequence = ++_sentSequence;
                 _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() sending message={msg} to Endpoint={Endpoint}");
-                msg.Send(_mailbox);
-                _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() SENT message={msg} to Endpoint={Endpoint}");
+                var success = msg.Send(_mailbox);
+                if (!success)
+                {
+                    _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() UNABLE to send message={msg} to Endpoint={Endpoint}");
+                }
             }
             return true;
         }
