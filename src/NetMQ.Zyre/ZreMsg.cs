@@ -431,6 +431,7 @@ namespace NetMQ.Zyre
             public JoinMessage()
             {
                 Version = 2;
+                Group = "";
             }
 
             /// <summary>
@@ -531,6 +532,7 @@ namespace NetMQ.Zyre
             public LeaveMessage()
             {
                 Version = 2;
+                Group = "";
             }
 
             /// <summary>

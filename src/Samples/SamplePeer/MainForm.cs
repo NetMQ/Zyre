@@ -266,7 +266,7 @@ namespace SamplePeer
                 {
                     _ownGroups.Add(new Group(ownGroup));
                 }
-                var peerGroups = _zyre.OwnGroups();
+                var peerGroups = _zyre.PeerGroups();
                 _peerGroups.Clear();
                 foreach (var peerGroup in peerGroups)
                 {

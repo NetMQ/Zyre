@@ -31,7 +31,11 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
+            this.lblMessageReceived = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
             this.groupBoxJoinLeave = new System.Windows.Forms.GroupBox();
+            this.txtGroupName = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.btnJoin = new System.Windows.Forms.Button();
             this.btnLeave = new System.Windows.Forms.Button();
             this.groupBoxNotes = new System.Windows.Forms.GroupBox();
@@ -49,10 +53,18 @@
             this.groupBoxGroups = new System.Windows.Forms.GroupBox();
             this.groupBoxOwnGroups = new System.Windows.Forms.GroupBox();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ownGroupBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.groupBoxPeerGroups = new System.Windows.Forms.GroupBox();
             this.peerGroupDataGridView = new System.Windows.Forms.DataGridView();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.peerGroupBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.groupBoxConnectedPeers = new System.Windows.Forms.GroupBox();
             this.peerDataGridView = new System.Windows.Forms.DataGridView();
+            this.senderNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.addressDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.senderUuidDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.peerBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.peerBindingNavigator = new System.Windows.Forms.BindingNavigator(this.components);
             this.bindingNavigatorCountItem = new System.Windows.Forms.ToolStripLabel();
             this.bindingNavigatorMoveFirstItem = new System.Windows.Forms.ToolStripButton();
@@ -67,18 +79,6 @@
             this.splitContainerLogging = new System.Windows.Forms.SplitContainer();
             this.rtbEventsLog = new System.Windows.Forms.RichTextBox();
             this.rtbNodeLog = new System.Windows.Forms.RichTextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.txtGroupName = new System.Windows.Forms.TextBox();
-            this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ownGroupBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.peerGroupBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.senderNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.addressDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.senderUuidDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.peerBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.label6 = new System.Windows.Forms.Label();
-            this.lblMessageReceived = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
             this.splitContainerMain.Panel1.SuspendLayout();
             this.splitContainerMain.Panel2.SuspendLayout();
@@ -90,19 +90,19 @@
             this.groupBoxGroups.SuspendLayout();
             this.groupBoxOwnGroups.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ownGroupBindingSource)).BeginInit();
             this.groupBoxPeerGroups.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerGroupDataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerGroupBindingSource)).BeginInit();
             this.groupBoxConnectedPeers.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerDataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.peerBindingNavigator)).BeginInit();
             this.peerBindingNavigator.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerLogging)).BeginInit();
             this.splitContainerLogging.Panel1.SuspendLayout();
             this.splitContainerLogging.Panel2.SuspendLayout();
             this.splitContainerLogging.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.ownGroupBindingSource)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.peerGroupBindingSource)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainerMain
@@ -133,6 +133,24 @@
             this.splitContainerMain.SplitterDistance = 408;
             this.splitContainerMain.TabIndex = 0;
             // 
+            // lblMessageReceived
+            // 
+            this.lblMessageReceived.AutoSize = true;
+            this.lblMessageReceived.Location = new System.Drawing.Point(129, 382);
+            this.lblMessageReceived.Name = "lblMessageReceived";
+            this.lblMessageReceived.Size = new System.Drawing.Size(106, 13);
+            this.lblMessageReceived.TabIndex = 19;
+            this.lblMessageReceived.Text = "lblMessageReceived";
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(21, 382);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(102, 13);
+            this.label6.TabIndex = 18;
+            this.label6.Text = "Message Received:";
+            // 
             // groupBoxJoinLeave
             // 
             this.groupBoxJoinLeave.Controls.Add(this.txtGroupName);
@@ -145,6 +163,24 @@
             this.groupBoxJoinLeave.TabIndex = 17;
             this.groupBoxJoinLeave.TabStop = false;
             this.groupBoxJoinLeave.Text = "Join or Leave the selected Peer Group";
+            // 
+            // txtGroupName
+            // 
+            this.txtGroupName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtGroupName.Location = new System.Drawing.Point(90, 52);
+            this.txtGroupName.Name = "txtGroupName";
+            this.txtGroupName.Size = new System.Drawing.Size(144, 20);
+            this.txtGroupName.TabIndex = 13;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(87, 24);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(70, 13);
+            this.label1.TabIndex = 13;
+            this.label1.Text = "Group Name:";
             // 
             // btnJoin
             // 
@@ -185,8 +221,8 @@
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(312, 40);
             this.label4.TabIndex = 14;
-            this.label4.Text = "Peer Groups are all groups ever known. The list can grow but it can never shrink." +
-    " ";
+            this.label4.Text = "The Peer Groups list includes every peer group ever known. The list can grow but " +
+    "it can never shrink. ";
             // 
             // label5
             // 
@@ -326,6 +362,17 @@
             this.dataGridView1.Size = new System.Drawing.Size(105, 130);
             this.dataGridView1.TabIndex = 0;
             // 
+            // dataGridViewTextBoxColumn2
+            // 
+            this.dataGridViewTextBoxColumn2.DataPropertyName = "GroupName";
+            this.dataGridViewTextBoxColumn2.HeaderText = "GroupName";
+            this.dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
+            this.dataGridViewTextBoxColumn2.ReadOnly = true;
+            // 
+            // ownGroupBindingSource
+            // 
+            this.ownGroupBindingSource.DataSource = typeof(SamplePeer.Group);
+            // 
             // groupBoxPeerGroups
             // 
             this.groupBoxPeerGroups.Controls.Add(this.peerGroupDataGridView);
@@ -354,6 +401,17 @@
             this.peerGroupDataGridView.RowHeadersVisible = false;
             this.peerGroupDataGridView.Size = new System.Drawing.Size(105, 130);
             this.peerGroupDataGridView.TabIndex = 0;
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "GroupName";
+            this.dataGridViewTextBoxColumn1.HeaderText = "GroupName";
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            this.dataGridViewTextBoxColumn1.ReadOnly = true;
+            // 
+            // peerGroupBindingSource
+            // 
+            this.peerGroupBindingSource.DataSource = typeof(SamplePeer.Group);
             // 
             // groupBoxConnectedPeers
             // 
@@ -388,6 +446,36 @@
             this.peerDataGridView.Size = new System.Drawing.Size(429, 224);
             this.peerDataGridView.TabIndex = 0;
             this.peerDataGridView.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.peerDataGridView_DataError);
+            // 
+            // senderNameDataGridViewTextBoxColumn
+            // 
+            this.senderNameDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.senderNameDataGridViewTextBoxColumn.DataPropertyName = "SenderName";
+            this.senderNameDataGridViewTextBoxColumn.HeaderText = "SenderName";
+            this.senderNameDataGridViewTextBoxColumn.Name = "senderNameDataGridViewTextBoxColumn";
+            this.senderNameDataGridViewTextBoxColumn.ReadOnly = true;
+            this.senderNameDataGridViewTextBoxColumn.Width = 94;
+            // 
+            // addressDataGridViewTextBoxColumn
+            // 
+            this.addressDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.addressDataGridViewTextBoxColumn.DataPropertyName = "Address";
+            this.addressDataGridViewTextBoxColumn.HeaderText = "Address";
+            this.addressDataGridViewTextBoxColumn.Name = "addressDataGridViewTextBoxColumn";
+            this.addressDataGridViewTextBoxColumn.ReadOnly = true;
+            this.addressDataGridViewTextBoxColumn.Width = 70;
+            // 
+            // senderUuidDataGridViewTextBoxColumn
+            // 
+            this.senderUuidDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.senderUuidDataGridViewTextBoxColumn.DataPropertyName = "SenderUuid";
+            this.senderUuidDataGridViewTextBoxColumn.HeaderText = "SenderUuid";
+            this.senderUuidDataGridViewTextBoxColumn.Name = "senderUuidDataGridViewTextBoxColumn";
+            this.senderUuidDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // peerBindingSource
+            // 
+            this.peerBindingSource.DataSource = typeof(SamplePeer.Peer);
             // 
             // peerBindingNavigator
             // 
@@ -533,94 +621,6 @@
             this.rtbNodeLog.TabIndex = 0;
             this.rtbNodeLog.Text = "";
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(87, 24);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(70, 13);
-            this.label1.TabIndex = 13;
-            this.label1.Text = "Group Name:";
-            // 
-            // txtGroupName
-            // 
-            this.txtGroupName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtGroupName.Location = new System.Drawing.Point(90, 52);
-            this.txtGroupName.Name = "txtGroupName";
-            this.txtGroupName.Size = new System.Drawing.Size(144, 20);
-            this.txtGroupName.TabIndex = 13;
-            // 
-            // dataGridViewTextBoxColumn2
-            // 
-            this.dataGridViewTextBoxColumn2.DataPropertyName = "GroupName";
-            this.dataGridViewTextBoxColumn2.HeaderText = "GroupName";
-            this.dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
-            this.dataGridViewTextBoxColumn2.ReadOnly = true;
-            // 
-            // ownGroupBindingSource
-            // 
-            this.ownGroupBindingSource.DataSource = typeof(SamplePeer.Group);
-            // 
-            // dataGridViewTextBoxColumn1
-            // 
-            this.dataGridViewTextBoxColumn1.DataPropertyName = "GroupName";
-            this.dataGridViewTextBoxColumn1.HeaderText = "GroupName";
-            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            this.dataGridViewTextBoxColumn1.ReadOnly = true;
-            // 
-            // peerGroupBindingSource
-            // 
-            this.peerGroupBindingSource.DataSource = typeof(SamplePeer.Group);
-            // 
-            // senderNameDataGridViewTextBoxColumn
-            // 
-            this.senderNameDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.senderNameDataGridViewTextBoxColumn.DataPropertyName = "SenderName";
-            this.senderNameDataGridViewTextBoxColumn.HeaderText = "SenderName";
-            this.senderNameDataGridViewTextBoxColumn.Name = "senderNameDataGridViewTextBoxColumn";
-            this.senderNameDataGridViewTextBoxColumn.ReadOnly = true;
-            this.senderNameDataGridViewTextBoxColumn.Width = 94;
-            // 
-            // addressDataGridViewTextBoxColumn
-            // 
-            this.addressDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.addressDataGridViewTextBoxColumn.DataPropertyName = "Address";
-            this.addressDataGridViewTextBoxColumn.HeaderText = "Address";
-            this.addressDataGridViewTextBoxColumn.Name = "addressDataGridViewTextBoxColumn";
-            this.addressDataGridViewTextBoxColumn.ReadOnly = true;
-            this.addressDataGridViewTextBoxColumn.Width = 70;
-            // 
-            // senderUuidDataGridViewTextBoxColumn
-            // 
-            this.senderUuidDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.senderUuidDataGridViewTextBoxColumn.DataPropertyName = "SenderUuid";
-            this.senderUuidDataGridViewTextBoxColumn.HeaderText = "SenderUuid";
-            this.senderUuidDataGridViewTextBoxColumn.Name = "senderUuidDataGridViewTextBoxColumn";
-            this.senderUuidDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // peerBindingSource
-            // 
-            this.peerBindingSource.DataSource = typeof(SamplePeer.Peer);
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(21, 382);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(102, 13);
-            this.label6.TabIndex = 18;
-            this.label6.Text = "Message Received:";
-            // 
-            // lblMessageReceived
-            // 
-            this.lblMessageReceived.AutoSize = true;
-            this.lblMessageReceived.Location = new System.Drawing.Point(129, 382);
-            this.lblMessageReceived.Name = "lblMessageReceived";
-            this.lblMessageReceived.Size = new System.Drawing.Size(106, 13);
-            this.lblMessageReceived.TabIndex = 19;
-            this.lblMessageReceived.Text = "lblMessageReceived";
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -646,11 +646,14 @@
             this.groupBoxGroups.ResumeLayout(false);
             this.groupBoxOwnGroups.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ownGroupBindingSource)).EndInit();
             this.groupBoxPeerGroups.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.peerGroupDataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerGroupBindingSource)).EndInit();
             this.groupBoxConnectedPeers.ResumeLayout(false);
             this.groupBoxConnectedPeers.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.peerDataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.peerBindingNavigator)).EndInit();
             this.peerBindingNavigator.ResumeLayout(false);
             this.peerBindingNavigator.PerformLayout();
@@ -658,9 +661,6 @@
             this.splitContainerLogging.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerLogging)).EndInit();
             this.splitContainerLogging.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.ownGroupBindingSource)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.peerGroupBindingSource)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.peerBindingSource)).EndInit();
             this.ResumeLayout(false);
 
         }

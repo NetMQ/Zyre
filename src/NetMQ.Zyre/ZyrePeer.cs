@@ -123,7 +123,6 @@ namespace NetMQ.Zyre
                 }
             };
             _loggerDelegate?.Invoke($"DealerSocket mailbox is connecting to peer at endpoint={endpoint} with identity={replyTo.ToShortString6()}");
-            _mailbox.Connect(endpoint);
             Endpoint = endpoint;
             Connected = true;
             Ready = false;
@@ -165,6 +164,7 @@ namespace NetMQ.Zyre
             {
                 msg.Sequence = ++_sentSequence;
                 _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() sending message={msg} to Endpoint={Endpoint}");
+                var tmp = _mailbox.Options.Identity;
                 var success = msg.Send(_mailbox);
                 if (!success)
                 {

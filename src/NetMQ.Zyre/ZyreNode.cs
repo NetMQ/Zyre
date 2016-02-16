@@ -428,10 +428,11 @@ namespace NetMQ.Zyre
                     {
                         // Only send if we are actually in group
                         // Update status before sending command
+                        _status = _status == UbyteMax ? (byte)0 : ++_status;
                         var msg = new ZreMsg
                         {
                             Id = ZreMsg.MessageId.Leave,
-                            Join =
+                            Leave =
                             {
                                 Group = groupNameLeave,
                                 Status = _status
@@ -560,7 +561,7 @@ namespace NetMQ.Zyre
             peer = ZyrePeer.NewPeer(_peers, uuid, _loggerDelegate);
             peer.SetOrigin(_name);
             peer.Connect(_uuid, endpoint);
-            Thread.Sleep(1000); // allow some time so we don't lose messages
+            Thread.Sleep(100); // allow some time so we don't lose messages
 
             // Handshake discovery by sending HELLO as first message
             var helloMessage = new ZreMsg
