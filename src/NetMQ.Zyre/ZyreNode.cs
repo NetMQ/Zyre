@@ -319,28 +319,6 @@ namespace NetMQ.Zyre
             }
         }
 
-        /// <summary>
-        /// Send message to one peer
-        /// </summary>
-        /// <param name="peer">The peer to get msg</param>
-        /// <param name="msg">the message to send</param>
-        private void SendMessageToPeer(ZyrePeer peer, ZreMsg msg)
-        {
-            peer.Send(msg);
-        }
-
-        /// <summary>
-        /// Send message to all peers
-        /// </summary>
-        /// <param name="msg">the message to send</param>
-        private void SendPeers(ZreMsg msg)
-        {
-            foreach (var peer in _peers.Values)
-            {
-                SendMessageToPeer(peer, msg);
-            }
-        }
-
         private void OnPipeReceiveReady(object sender, NetMQSocketEventArgs e)
         {
             ReceiveApi();
@@ -511,10 +489,7 @@ namespace NetMQ.Zyre
                     break;
                 case NetMQActor.EndShimMessage:
                     // API shut us down
-                    if (_poller != null)
-                    {
-                        _poller.Stop();
-                    }
+                    _poller?.Stop();
                     break;
                 default:
                     throw new ArgumentException(command);
@@ -527,7 +502,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        private Guid PopGuid(NetMQMessage message)
+        private static Guid PopGuid(NetMQMessage message)
         {
             var bytes = message.Pop().ToByteArray();
             Debug.Assert(bytes.Length == 16);
@@ -674,7 +649,7 @@ namespace NetMQ.Zyre
         /// <param name="peer">The peer that is joining thie group</param>
         /// <param name="groupName">The name of the group to join</param>
         /// <returns>the group joined</returns>
-        private ZyreGroup JoinPeerGroup(ZyrePeer peer, string groupName)
+        private void JoinPeerGroup(ZyrePeer peer, string groupName)
         {
             var group = RequirePeerGroup(groupName);
             group.Join(peer);
@@ -682,7 +657,6 @@ namespace NetMQ.Zyre
             // Now tell the caller about the peer joined group
             _outbox.SendMoreFrame("JOIN").SendMoreFrame(peer.Uuid.ToByteArray()).SendMoreFrame(peer.Name).SendFrame(groupName);
             _loggerDelegate?.Invoke($"JOIN name={peer.Name} group={groupName}");
-           return group;
         }
 
         /// <summary>
@@ -691,7 +665,7 @@ namespace NetMQ.Zyre
         /// <param name="peer"></param>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        private ZyreGroup LeavePeerGroup(ZyrePeer peer, string groupName)
+        private void LeavePeerGroup(ZyrePeer peer, string groupName)
         {
             var group = RequirePeerGroup(groupName);
             group.Leave(peer);
@@ -699,7 +673,6 @@ namespace NetMQ.Zyre
             // Now tell the caller about the peer left group
             _outbox.SendMoreFrame("LEAVE").SendMoreFrame(peer.Uuid.ToByteArray()).SendMoreFrame(peer.Name).SendFrame(groupName);
             _loggerDelegate?.Invoke($"LEAVE name={peer.Name} group={groupName}");
-            return group;
         }
 
         /// <summary>
@@ -1033,7 +1006,7 @@ namespace NetMQ.Zyre
             // polling until cancelled
             _poller.Run();
 
-            this.Dispose();
+            Dispose();
         }
 
         private void OnReapTimerElapsed(object sender, NetMQTimerEventArgs e)
