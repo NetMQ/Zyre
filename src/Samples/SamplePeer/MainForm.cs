@@ -57,14 +57,18 @@ namespace SamplePeer
         private void ZyreShoutEvent(object sender, ZyreEventShout e)
         {
             var msg = e.Content.Pop().ConvertToString();
-            lblMessageReceived.Text = msg;
+            var uuidShort = e.SenderUuid.ToShortString6();
+            var str = string.Format("Shout from {0} to group={1}: {2}", uuidShort, e.GroupName, msg);
+            UpdateLblMessageReceived(str);
             EventsLogger($"Shout: {e.SenderName} {e.SenderUuid.ToShortString6()} shouted message {msg} to group:{e.GroupName}");
         }
 
         private void ZyreWhisperEvent(object sender, ZyreEventWhisper e)
         {
             var msg = e.Content.Pop().ConvertToString();
-            lblMessageReceived.Text = msg;
+            var uuidShort = e.SenderUuid.ToShortString6();
+            var str = string.Format("Whisper from {0}: {1}", uuidShort, msg);
+            UpdateLblMessageReceived(str);
             EventsLogger($"Whisper: {e.SenderName} {e.SenderUuid.ToShortString6()} whispered message {msg}");
         }
 
@@ -215,19 +219,19 @@ namespace SamplePeer
 
         private void btnWhisper_Click(object sender, EventArgs e)
         {
-            var selectedRowCount = peerDataGridView.Rows.GetRowCount(DataGridViewElementStates.Selected);
-            if (selectedRowCount == 0)
-            {
-                MessageBox.Show("You must select a row in the Connected Peers list");
-                return;
-            }
             var chatMessage = txtWhisperMessage.Text;
             if (string.IsNullOrEmpty(chatMessage))
             {
                 MessageBox.Show("You must enter a chat message.");
                 return;
             }
-            var uuid = peerGroupDataGridView.Rows[0].Cells["SenderUuid"].ToString();
+            var selectedRowCount = peerDataGridView.Rows.GetRowCount(DataGridViewElementStates.Selected);
+            if (selectedRowCount == 0)
+            {
+                MessageBox.Show("You must select a row in the Peer Groups list");
+                return;
+            }
+            var uuid = peerDataGridView.SelectedRows[0].Cells[2].Value.ToString();
             Guid guid;
             if (!Guid.TryParse(uuid, out guid))
             {
@@ -241,20 +245,27 @@ namespace SamplePeer
 
         private void btnShout_Click(object sender, EventArgs e)
         {
-            var chatMessage = txtWhisperMessage.Text;
+            var chatMessage = txtShoutMessage.Text;
             if (string.IsNullOrEmpty(chatMessage))
             {
                 MessageBox.Show("You must enter a chat message.");
                 return;
             }
+            var selectedRowCount = peerGroupDataGridView.Rows.GetRowCount(DataGridViewElementStates.Selected);
+            if (selectedRowCount == 0)
+            {
+                MessageBox.Show("You must select a row in the Connected Peers list");
+                return;
+            }
+            var groupName = peerGroupDataGridView.SelectedRows[0].Cells[0].Value.ToString();
             var msg = new NetMQMessage();
             msg.Append(chatMessage);
-            _zyre.Shout("groupName", msg);
+            _zyre.Shout(groupName, msg);
         }
 
         private void UpdateAndShowGroups()
         {
-            if (comboBoxPeerGroupNames.InvokeRequired)
+            if (InvokeRequired)
             {
                 BeginInvoke(new MethodInvoker(UpdateAndShowGroups));
             }
@@ -276,6 +287,18 @@ namespace SamplePeer
                 peerBindingSource.ResetBindings(false);
                 ownGroupBindingSource.ResetBindings(false);
                 peerGroupBindingSource.ResetBindings(false);
+            }
+        }
+
+        private void UpdateLblMessageReceived(string msg)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new MethodInvoker(() => UpdateLblMessageReceived(msg)));
+            }
+            else
+            {
+                lblMessageReceived.Text = msg;
             }
         }
 

@@ -391,7 +391,7 @@ namespace NetMQ.Zyre
                         var msg = new ZreMsg
                         {
                             Id = ZreMsg.MessageId.Shout,
-                            Shout = {Content = request}
+                            Shout = {Group = groupNameShout, Content = request}
                         };
                         group.Send(msg);
                     }
@@ -782,33 +782,11 @@ namespace NetMQ.Zyre
                     break;
                 case ZreMsg.MessageId.Whisper:
                     // Pass up to caller API as WHISPER event
-                    //outMsg = new NetMQMessage();
-                    //outMsg.Append("WHISPER");
-                    //outMsg.Append(uuid.ToByteArray());
-                    //outMsg.Append(peer.Name);
-                    //for (int i = 0; i < msg.Whisper.Content.FrameCount; i++)
-                    //{
-                    //    outMsg.Append(msg.Whisper.Content[i]);
-                    //}
-                    //_outbox.SendMultipartMessage(outMsg);
-
-                    // TODO Check this method instead
                     _outbox.SendMoreFrame("WHISPER").SendMoreFrame(uuid.ToByteArray()).SendMoreFrame(peer.Name).SendMultipartMessage(msg.Whisper.Content);
-
                     break;
                 case ZreMsg.MessageId.Shout:
                     // Pass up to caller API as SHOUT event
-                    outMsg = new NetMQMessage();
-                    outMsg.Append("SHOUT");
-                    outMsg.Append(uuid.ToByteArray());
-                    outMsg.Append(peer.Name);
-                    outMsg.Append(msg.Shout.Group);
-                    for (int i = 0; i < msg.Shout.Content.FrameCount; i++)
-                    {
-                        outMsg.Append(msg.Shout.Content[i]);
-                    }
-                    _outbox.SendMultipartMessage(outMsg);
-                    // TODO: DO this like Whisper above?
+                    _outbox.SendMoreFrame("SHOUT").SendMoreFrame(uuid.ToByteArray()).SendMoreFrame(peer.Name).SendMoreFrame(msg.Shout.Group).SendMultipartMessage(msg.Shout.Content);
                     break;
                 case ZreMsg.MessageId.Join:
                     JoinPeerGroup(peer, msg.Join.Group);

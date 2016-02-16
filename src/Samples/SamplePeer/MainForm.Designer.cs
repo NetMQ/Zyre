@@ -42,7 +42,6 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.groupBoxShout = new System.Windows.Forms.GroupBox();
-            this.comboBoxPeerGroupNames = new System.Windows.Forms.ComboBox();
             this.btnShout = new System.Windows.Forms.Button();
             this.txtShoutMessage = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -235,7 +234,6 @@
             // 
             // groupBoxShout
             // 
-            this.groupBoxShout.Controls.Add(this.comboBoxPeerGroupNames);
             this.groupBoxShout.Controls.Add(this.btnShout);
             this.groupBoxShout.Controls.Add(this.txtShoutMessage);
             this.groupBoxShout.Controls.Add(this.label3);
@@ -245,14 +243,6 @@
             this.groupBoxShout.TabIndex = 14;
             this.groupBoxShout.TabStop = false;
             this.groupBoxShout.Text = "Shout to the selected Peer Group";
-            // 
-            // comboBoxPeerGroupNames
-            // 
-            this.comboBoxPeerGroupNames.FormattingEnabled = true;
-            this.comboBoxPeerGroupNames.Location = new System.Drawing.Point(6, 18);
-            this.comboBoxPeerGroupNames.Name = "comboBoxPeerGroupNames";
-            this.comboBoxPeerGroupNames.Size = new System.Drawing.Size(75, 21);
-            this.comboBoxPeerGroupNames.TabIndex = 14;
             // 
             // btnShout
             // 
@@ -359,6 +349,7 @@
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.ReadOnly = true;
             this.dataGridView1.RowHeadersVisible = false;
+            this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridView1.Size = new System.Drawing.Size(105, 130);
             this.dataGridView1.TabIndex = 0;
             // 
@@ -399,6 +390,7 @@
             this.peerGroupDataGridView.Name = "peerGroupDataGridView";
             this.peerGroupDataGridView.ReadOnly = true;
             this.peerGroupDataGridView.RowHeadersVisible = false;
+            this.peerGroupDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.peerGroupDataGridView.Size = new System.Drawing.Size(105, 130);
             this.peerGroupDataGridView.TabIndex = 0;
             // 
@@ -443,6 +435,7 @@
             this.peerDataGridView.Name = "peerDataGridView";
             this.peerDataGridView.ReadOnly = true;
             this.peerDataGridView.RowHeadersVisible = false;
+            this.peerDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.peerDataGridView.Size = new System.Drawing.Size(429, 224);
             this.peerDataGridView.TabIndex = 0;
             this.peerDataGridView.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.peerDataGridView_DataError);
@@ -711,7 +704,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
         private System.Windows.Forms.BindingSource peerGroupBindingSource;
         private System.Windows.Forms.GroupBox groupBoxJoinLeave;
-        private System.Windows.Forms.ComboBox comboBoxPeerGroupNames;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox txtGroupName;
         private System.Windows.Forms.Label lblMessageReceived;
