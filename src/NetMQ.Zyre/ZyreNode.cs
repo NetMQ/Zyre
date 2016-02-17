@@ -132,7 +132,7 @@ namespace NetMQ.Zyre
         /// All node control is done through _actor.
         /// outbox is passed to ZyreNode for sending Zyre message traffic back to caller.
         /// </summary>
-        /// <param name="outbox"></param>
+        /// <param name="outbox">the pipe for sending messages from peers back to Zyre.cs</param>
         /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
         /// <returns>the _actor, or null if not successful</returns>
         internal static NetMQActor Create(PairSocket outbox, Action<string> loggerDelegate = null)
@@ -232,7 +232,6 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Stop node discovery and interconnection
         /// </summary>
-        /// <returns></returns>
         private void Stop()
         {
             if (!_isRunning)
@@ -597,8 +596,8 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return a string showing the class name and method of method calling the method calling this method, used for reporting errors
         /// </summary>
-        /// <returns></returns>
-        public static string MethodNameLevelAbove()
+        /// <returns>the name of the calling method</returns>
+        private static string MethodNameLevelAbove()
         {
             var stackTrace = new StackTrace();
             var stackFrame = stackTrace.GetFrame(2);

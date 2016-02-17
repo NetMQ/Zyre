@@ -37,7 +37,7 @@ namespace NetMQ.Zyre.ZyreEvents
         /// <param name="senderUuid">The sending peer's identity</param>
         /// <param name="senderName">The sending peer's public name</param>
         /// <param name="headers">The sending peer's headers</param>
-        /// <param name="address"></param>
+        /// <param name="address">The full 0MQ address, or endpoint, e.g. "tcp://127.0.0.1:49520</param>
         public ZyreEventEnter(Guid senderUuid, string senderName, Dictionary<string, string> headers, string address)
         {
             Headers = headers;

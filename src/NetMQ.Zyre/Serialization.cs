@@ -17,7 +17,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="objectToSerialize"></param>
-        /// <returns></returns>
+        /// <returns>the serialized buffer</returns>
         public static byte[] BinarySerialize<T>(T objectToSerialize)
         {
             using (var ms = new MemoryStream())
@@ -33,7 +33,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serializedBytes">buffer serialized by Serializtion.BinarySerialize()</param>
-        /// <returns>T</returns>
+        /// <returns>the object of type T</returns>
         public static T BinaryDeserialize<T>(byte[] serializedBytes)
         {
             using (var ms = new MemoryStream(serializedBytes))
