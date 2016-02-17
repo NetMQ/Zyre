@@ -244,7 +244,11 @@ namespace NetMQ.Zyre
         /// Get or set peer headers table
         /// </summary>
         /// <returns></returns>
-        internal Dictionary<string, string> Headers { get; set; }
+        internal Dictionary<string, string> Headers
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Check if messages were lost from peer, returns true if they were
@@ -277,7 +281,7 @@ namespace NetMQ.Zyre
         {
             var name = string.IsNullOrEmpty(Name) ? "NotSet" : Name;
             var origin = string.IsNullOrEmpty(Origin) ? "NotSet" : Origin;
-            return $"[from origin={origin} to name={name} uuidShort={Uuid.ToShortString6()} endpoint={Endpoint} connected={Connected} ready={Ready} status={Status} _sentSeq={_sentSequence} _wantSeq={_wantSequence}]";
+            return $"[from origin={origin} to name={name} uuidShort={Uuid.ToShortString6()} endpoint={Endpoint} connected={Connected} ready={Ready} status={Status} _sentSeq={_sentSequence} _wantSeq={_wantSequence} headerCount={Headers.Count}]";
         }
 
         /// <summary>

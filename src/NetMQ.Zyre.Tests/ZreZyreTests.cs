@@ -98,8 +98,8 @@ namespace NetMQ.Zyre.Tests
                 node1.Dump();
                 node2.Dump();
 
-                var peers = node1.Peers();
-                peers.Count.Should().Be(1);
+                var node1Peers = node1.Peers();
+                node1Peers.Count.Should().Be(1);
 
                 Console.WriteLine("node1 Joining node1 group of one");
                 node1.Join("node1 group of one");
@@ -115,7 +115,9 @@ namespace NetMQ.Zyre.Tests
                 var peerGroups = node1.PeerGroups();
                 peerGroups.Count.Should().Be(2);
 
-                var value = node1.PeerHeaderValue(node1.Uuid(), "X-HELLO");
+                var node2Peers = node2.Peers();
+                node2Peers.Count.Should().Be(1);
+                var value = node2.PeerHeaderValue(uuid1, "X-HELLO");
                 value.Should().Be("World");
 
                 // One node shouts to GLOBAL

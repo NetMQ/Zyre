@@ -288,8 +288,8 @@ namespace NetMQ.Zyre
         /// Return the value of a header of a connected peer.  Returns String.Empty if peer
         /// or key doesn't exist.
         /// </summary>
-        /// <param name="peer"></param>
-        /// <param name="key"></param>
+        /// <param name="peer">The Guid for the peer whose header value we want</param>
+        /// <param name="key">The key whose header value we want</param>
         /// <returns>the value of a header of a connected peer, or String.Empty if peer or key doesn't exist</returns>
         public string PeerHeaderValue(Guid peer, string key)
         {
@@ -473,7 +473,7 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            return $"name:{_name} endpoint:{_endpoint}";
+            return $"uuidShort={_uuid.ToShortString6()} name={_name} router endpoint={_endpoint} uuid={_uuid}";
         }
 
         /// <summary>

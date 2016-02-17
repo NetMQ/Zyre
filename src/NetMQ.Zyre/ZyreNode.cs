@@ -475,11 +475,19 @@ namespace NetMQ.Zyre
                     if (_peers.TryGetValue(uuidForHeader, out peerForHeader))
                     {
                         string header;
-                        _headers.TryGetValue(keyForHeader, out header);
-                        _pipe.SendFrame(header ?? "");
+                        if (peerForHeader.Headers.TryGetValue(keyForHeader, out header))
+                        {
+                            _pipe.SendFrame(header);
+                        }
+                        else
+                        {
+                            _loggerDelegate?.Invoke($"No header with key {keyForHeader} in peer uuidShort={uuidForHeader.ToShortString6()}");
+                            _pipe.SendFrame("");
+                        }
                     }
                     else
                     {
+                        _loggerDelegate?.Invoke($"PEER HEADER requested for peer uuidShort={uuidForHeader.ToShortString6()} that is not a peer");
                         _pipe.SendFrame("");
                     }
                     break;
@@ -514,7 +522,10 @@ namespace NetMQ.Zyre
         private static Guid PopGuid(NetMQMessage message)
         {
             var bytes = message.Pop().ToByteArray();
-            Debug.Assert(bytes.Length == 16);
+            if (bytes.Length != 16)
+            {
+                throw new Exception("Unexpected guid length");
+            }
             var uuid = new Guid(bytes);
             return uuid;
         }
@@ -533,7 +544,6 @@ namespace NetMQ.Zyre
         }
 
         private readonly HashSet<ZyrePeer> _reportedKnownPeersTmp = new HashSet<ZyrePeer>();
-        private bool _isRequirePeerRunning;
 
         /// <summary>
         /// Find or create peer via its UUID
@@ -543,11 +553,6 @@ namespace NetMQ.Zyre
         /// <returns>A peer (existing, or new one connected to endpoint)</returns>
         private ZyrePeer RequirePeer(Guid uuid, string endpoint)
         {
-            if (_isRequirePeerRunning)
-            {
-                _loggerDelegate?.Invoke($"Entry into {nameof(ZyreNode)}.{nameof(RequirePeer)}() while it's running. uuid={uuid.ToShortString6()}");
-            }
-            _isRequirePeerRunning = true;
             Debug.Assert(!string.IsNullOrEmpty(endpoint));
             ZyrePeer peer;
             if (_peers.TryGetValue(uuid, out peer))
@@ -558,7 +563,6 @@ namespace NetMQ.Zyre
                     _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() called by {callingMethod1} returning already-known peer={peer}");
                     _reportedKnownPeersTmp.Add(peer);
                 }
-                _isRequirePeerRunning = false;
                 return peer;
             }
 
@@ -588,7 +592,6 @@ namespace NetMQ.Zyre
             };
             _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() called by {callingMethod2} created new peer={peer}. Sending Hello message...");
             peer.Send(helloMessage);
-            _isRequirePeerRunning = false;
             return peer;
         }
 
@@ -913,7 +916,7 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            return $"name:{_name} router endpoint:{_endpoint} status:{_status}";
+            return $"uuidShort={_uuid.ToShortString6()} name={_name} router endpoint={_endpoint} status={_status} uuid={_uuid}";
         }
 
         /// <summary>
