@@ -10,7 +10,6 @@ Caveats:
 2. The RFC30 spec says: Each node SHALL create a ZeroMQ ROUTER socket and bind this to an ephemeral TCP port (in the range %C000x - %FFFFx). 
     ...but this C# implementation does NOT guarantee the ephemeral port (chosen by the OS) will be in that range.
 
-
 	Zyre does local area discovery and clustering. A Zyre node broadcasts
 UDP beacons, and connects to peers that it finds. This class wraps a
 Zyre node with a message-based API.
