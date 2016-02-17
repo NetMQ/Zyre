@@ -549,13 +549,14 @@ namespace NetMQ.Zyre
                 _loggerDelegate?.Invoke($"Entry into {nameof(ZyreNode)}.{nameof(RequirePeer)}() while it's running. uuid={uuid.ToShortString6()}");
             }
             _isRequirePeerRunning = true;
-            Debug.Assert(!String.IsNullOrEmpty(endpoint));
+            Debug.Assert(!string.IsNullOrEmpty(endpoint));
             ZyrePeer peer;
             if (_peers.TryGetValue(uuid, out peer))
             {
                 if (!_reportedKnownPeersTmp.Contains(peer))
                 {
-                    _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() returning already-known peer={peer}");
+                    var callingMethod1 = MethodNameLevelAbove();
+                    _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() called by {callingMethod1} returning already-known peer={peer}");
                     _reportedKnownPeersTmp.Add(peer);
                 }
                 _isRequirePeerRunning = false;
@@ -567,6 +568,8 @@ namespace NetMQ.Zyre
             {
                 PurgePeer(existingPeer, endpoint);
             }
+            var callingMethod2 = MethodNameLevelAbove();
+            _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() called by {callingMethod2} creating new peer with uuidShort={uuid.ToShortString6()}");
             peer = ZyrePeer.NewPeer(_peers, uuid, _loggerDelegate);
             peer.Origin = _name;
             peer.Connect(_uuid, endpoint);
@@ -585,11 +588,8 @@ namespace NetMQ.Zyre
                     Headers = _headers
                 }
             };
-            _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() created new peer uuid={uuid}. Sending Hello message...");
+            _loggerDelegate?.Invoke($"{nameof(ZyreNode)}.{nameof(RequirePeer)}() called by {callingMethod2} created new peer={peer}. Sending Hello message...");
             peer.Send(helloMessage);
-            _loggerDelegate?.Invoke($"TMP {nameof(ZyreNode)}.{nameof(RequirePeer)}() created new peer uuid={uuid}. SENT Hello message...");
-            var callingMethod = MethodNameLevelAbove();
-            _loggerDelegate?.Invoke($"TMP Called by {callingMethod}");
             _isRequirePeerRunning = false;
             return peer;
         }
@@ -765,7 +765,7 @@ namespace NetMQ.Zyre
 
                     // Tell the caller about the peer
                     var headersBuffer = Serialization.BinarySerialize(peer.Headers);
-                    _outbox.SendMoreFrame("ENTER").SendMoreFrame(peer.Uuid.ToByteArray()).SendMoreFrame(peer.Name).SendMoreFrame(headersBuffer).SendMoreFrame(helloMessage.Endpoint);
+                    _outbox.SendMoreFrame("ENTER").SendMoreFrame(peer.Uuid.ToByteArray()).SendMoreFrame(peer.Name).SendMoreFrame(headersBuffer).SendFrame(helloMessage.Endpoint);
                     _loggerDelegate?.Invoke($"ENTER name={peer.Name} endpoint={peer.Endpoint}");
 
                     // Join peer to listed groups
