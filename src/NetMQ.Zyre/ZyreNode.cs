@@ -855,11 +855,11 @@ namespace NetMQ.Zyre
                 // We have been stopped. We know longer can communicate to peers.
                 return true;
             }
-            if (ZyrePeer.CurrentTimeMilliseconds() >= peer.ExpiredAt)
+            if (DateTime.Now >= peer.ExpiredAt)
             {
                 return true;
             }
-            if (ZyrePeer.CurrentTimeMilliseconds() >= peer.EvasiveAt)
+            if (DateTime.Now >= peer.EvasiveAt)
             {
                 // If peer is being evasive, force a TCP ping.
                 // ZeroMQTODO: do this only once for a peer in this state;

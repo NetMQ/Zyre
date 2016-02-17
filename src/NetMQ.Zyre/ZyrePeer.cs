@@ -180,28 +180,19 @@ namespace NetMQ.Zyre
         /// </summary>
         internal void Refresh()
         {
-            EvasiveAt = CurrentTimeMilliseconds() + PeerEvasive;
-            ExpiredAt = CurrentTimeMilliseconds() + PeerExpired;
-        }
-
-        /// <summary>
-        /// Milliseconds since January 1, 1970 UTC
-        /// </summary>
-        /// <returns></returns>
-        internal static long CurrentTimeMilliseconds()
-        {
-            return (DateTime.UtcNow.Ticks - 621355968000000000) / 10000;
+            EvasiveAt = DateTime.Now.AddMilliseconds(PeerEvasive);
+            ExpiredAt = DateTime.Now.AddMilliseconds(PeerExpired);
         }
 
         /// <summary>
         /// Return peer future expired time
         /// </summary>
-        internal long EvasiveAt { get; private set; }
+        internal DateTime EvasiveAt { get; private set; }
 
         /// <summary>
         /// Return peer future evasive time
         /// </summary>
-        internal long ExpiredAt { get; private set; }
+        internal DateTime ExpiredAt { get; private set; }
 
         /// <summary>
         /// Return peer name
