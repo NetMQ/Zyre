@@ -130,6 +130,7 @@ namespace NetMQ.Zyre
         {
             if (Connected)
             {
+                _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Disconnect)}() disposing mailbox for peer={this}");
                 _mailbox.Dispose();
                 _mailbox = null;
                 Endpoint = null;
@@ -275,10 +276,7 @@ namespace NetMQ.Zyre
             }
             if (_wantSequence != msg.Sequence)
             {
-                if (_loggerDelegate != null)
-                {
-                    _loggerDelegate($"Sequence error for peer={Name} expected={_wantSequence}, got={msg.Sequence}");
-                }
+                _loggerDelegate?.Invoke($"Sequence error for peer={Name} expected={_wantSequence}, got={msg.Sequence}");
                 return true;
             }
             return false;
@@ -288,8 +286,7 @@ namespace NetMQ.Zyre
         {
             var name = string.IsNullOrEmpty(Name) ? "NotSet" : Name;
             var origin = string.IsNullOrEmpty(Origin) ? "NotSet" : Origin;
-            return
-                $"[from origin:{origin} to name:{name} endpoint:{Endpoint} connected:{Connected} ready:{Ready} status:{Status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{Uuid.ToShortString6()}]";
+            return $"[from origin={origin} to name={name} uuidShort={Uuid.ToShortString6()} endpoint={Endpoint} connected={Connected} ready={Ready} status={Status} _sentSeq={_sentSequence} _wantSeq={_wantSequence}]";
         }
 
         /// <summary>

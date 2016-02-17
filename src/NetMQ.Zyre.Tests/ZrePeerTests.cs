@@ -29,7 +29,7 @@ namespace NetMQ.Zyre.Tests
                 using (var mailbox = new RouterSocket("tcp://127.0.0.1:5551")) // RouterSocket default action binds to the address
                 {
                     peer.Connected.Should().BeFalse();
-                    peer.SetName("PeerYou");
+                    peer.Name = "PeerYou";
                     peer.Name.Should().Be("PeerYou");
                     peer.Connect(me, "tcp://127.0.0.1:5551"); // create a DealerSocket connected to router on 5551
                     peer.Connected.Should().BeTrue();
