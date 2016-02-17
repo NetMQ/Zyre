@@ -24,6 +24,7 @@ namespace SamplePeer
         private readonly List<Group> _peerGroups;
         private readonly Guid _uuid;
         private string _endpoint;
+        private readonly Dictionary<Guid, List<Header>> _headersByPeerGuid ; 
 
         public MainForm(string name)
         {
@@ -35,6 +36,7 @@ namespace SamplePeer
             ownGroupBindingSource.DataSource = _ownGroups;
             _peerGroups = new List<Group>();
             peerGroupBindingSource.DataSource = _peerGroups;
+            _headersByPeerGuid = new Dictionary<Guid, List<Header>>();
             _zyre = new Zyre(_name, NodeLogger);
             if (!string.IsNullOrEmpty(name))
             {
@@ -56,7 +58,7 @@ namespace SamplePeer
         {
             var msg = e.Content.Pop().ConvertToString();
             var uuidShort = e.SenderUuid.ToShortString6();
-            var str = string.Format("Shout from {0} to group={1}: {2}", uuidShort, e.GroupName, msg);
+            var str = $"Shout from {uuidShort} to group={e.GroupName}: {msg}";
             UpdateMessageReceived(str);
             EventsLogger($"Shout: {e.SenderName} {e.SenderUuid.ToShortString6()} shouted message {msg} to group:{e.GroupName}");
         }
@@ -65,7 +67,7 @@ namespace SamplePeer
         {
             var msg = e.Content.Pop().ConvertToString();
             var uuidShort = e.SenderUuid.ToShortString6();
-            var str = string.Format("Whisper from {0}: {1}", uuidShort, msg);
+            var str = $"Whisper from {uuidShort}: {msg}";
             UpdateMessageReceived(str);
             EventsLogger($"Whisper: {e.SenderName} {e.SenderUuid.ToShortString6()} whispered message {msg}");
         }
@@ -90,6 +92,7 @@ namespace SamplePeer
         private void ZyreExitEvent(object sender, ZyreEventExit e)
         {
             _connectedPeers.RemoveAll(x => x.SenderUuid == e.SenderUuid);
+            _headersByPeerGuid.Remove(e.SenderUuid);
             EventsLogger($"Exited: {e.SenderName} {e.SenderUuid.ToShortString6()}");
             UpdateAndShowGroups();
         }
@@ -97,6 +100,7 @@ namespace SamplePeer
         private void ZyreStopEvent(object sender, ZyreEventStop e)
         {
             _connectedPeers.RemoveAll(x => x.SenderUuid == e.SenderUuid);
+            _headersByPeerGuid.Remove(e.SenderUuid);
             EventsLogger($"Stopped: {e.SenderName} {e.SenderUuid.ToShortString6()}");
             UpdateAndShowGroups();
         }
@@ -105,13 +109,17 @@ namespace SamplePeer
         {
             var peer = new Peer(e.SenderName, e.SenderUuid, e.Address);
             _connectedPeers.Add(peer);
+            var headers = new List<Header>();
+            _headersByPeerGuid[e.SenderUuid] = headers;
             EventsLogger($"Entered: {e.SenderName} {e.SenderUuid.ToShortString6()} at {e.Address} with {e.Headers.Count} headers");
             if (e.Headers.Count > 0)
             {
                 var sb = new StringBuilder($"Headers: " + Environment.NewLine);
-                foreach (var header in e.Headers)
+                foreach (var pair in e.Headers)
                 {
-                    sb.AppendLine(header.Key + "|" + header.Value);
+                    sb.AppendLine(pair.Key + "|" + pair.Value);
+                    var header = new Header(pair.Key, pair.Value);
+                    headers.Add(header);
                 }
                 EventsLogger(sb.ToString());
             }
@@ -155,6 +163,22 @@ namespace SamplePeer
             DisplayTitle();
             _connectedPeers.Clear();
         }
+
+        private void btnAddHeader_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtHeaderKey.Text))
+            {
+                MessageBox.Show("Missing header Key");
+                return;
+            }
+            if (string.IsNullOrEmpty(txtHeaderValue.Text))
+            {
+                MessageBox.Show("Missing header Value");
+                return;
+            }
+            _zyre.SetHeader(txtHeaderKey.Text, txtHeaderValue.Text);
+        }
+
         public void MessageLogger(string str)
         {
             var msg = $"{DateTime.Now.ToString("h:mm:ss.fff")} {str}";
@@ -307,6 +331,42 @@ namespace SamplePeer
             }
         }
 
+        private void peerDataGridView_SelectionChanged(object sender, EventArgs e)
+        {
+            UpdatePeerHeaders();
+        }
+
+        private void UpdatePeerHeaders()
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new MethodInvoker(UpdatePeerHeaders));
+            }
+            else
+            {
+                if (peerDataGridView.CurrentCell == null)
+                {
+                    return;
+                }
+                var rowIndex = peerDataGridView.CurrentCell.RowIndex;
+                var uuid = peerDataGridView.Rows[rowIndex].Cells[2].Value.ToString();
+                Guid guid;
+                if (!Guid.TryParse(uuid, out guid))
+                {
+                    MessageBox.Show("Unable to convert SenderUuid to Guid");
+                    return;
+                }
+                List<Header> headers;
+                if (!_headersByPeerGuid.TryGetValue(guid, out headers))
+                {
+                    throw new Exception("Unexpected failure to find peer headers");
+                }
+                headerBindingSource.DataSource = headers;
+                headerBindingSource.ResetBindings(false);
+            }
+        }
+
+
         /// <summary>
         /// Provide generic error handling for a DataGridView error
         /// </summary>
@@ -345,5 +405,6 @@ namespace SamplePeer
                 e.ThrowException = false;
             }
         }
+
     }
 }
