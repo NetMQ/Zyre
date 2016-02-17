@@ -47,6 +47,7 @@ namespace NetMQ.Zyre
         private string _endpoint;
 
         private readonly NetMQPoller _inboxPoller;
+        private string _interfaceName;
 
         /// <summary>
         /// Create a Zyre API that communicates with a node on the ZRE bus.
@@ -164,12 +165,12 @@ namespace NetMQ.Zyre
         /// Set network interface for UDP beacons. If you do not set this, NetMQ will
         /// choose an interface for you. On boxes with several interfaces you should
         /// specify which one you want to use, or strange things can happen.
+        /// This will only apply to the next START command.
         /// </summary>
-        /// <param name="value">the interface</param>
+        /// <param name="value">the interface. A null or empty string means to use the default interface</param>
         public void SetInterface(string value)
         {
-            // TODO
-            // zsys_set_interface(value);
+            _interfaceName = value ?? "";
         }
 
         /// <summary>
@@ -183,7 +184,7 @@ namespace NetMQ.Zyre
                 _inboxPoller.Add(_inbox);
                 Thread.Sleep(100);
             }
-            _actor.SendFrame("START");
+            _actor.SendMoreFrame("START").SendFrame(_interfaceName ?? "");
         }
 
         /// <summary>

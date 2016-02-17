@@ -189,8 +189,9 @@ namespace NetMQ.Zyre
         /// We get a new _inbox (RouterSocket listening to peers) and a new _beacon on every Start().
         /// Also a new _port and _endpoint at each Start()
         /// </summary>
+        /// <param name="interfaceName">A particular name, or null </param>
         /// <returns>true if OK, false if not possible or if already running</returns>
-        private bool Start()
+        private bool Start(string interfaceName)
         {
             if (_isRunning)
             {
@@ -200,7 +201,7 @@ namespace NetMQ.Zyre
             // Create the _beacon and bind the _inbox
             _beacon = new NetMQBeacon();
             _beacon.ReceiveReady += OnBeaconReady;
-            _beacon.Configure(_beaconPort);
+            _beacon.Configure(interfaceName, _beaconPort);
 
             // Bind our router port to the host. Our hostName is provided by the beacon.
             var address = $"tcp://{_beacon.BoundTo}";
@@ -367,7 +368,8 @@ namespace NetMQ.Zyre
                     TimeSpan.TryParse(intervalStr, out _interval);
                     break;
                 case "START":
-                    Start();
+                    var interfaceName = request.Pop().ConvertToString();
+                    Start(interfaceName);
                     break;
                 case "STOP":
                     Stop();
