@@ -375,7 +375,7 @@ namespace NetMQ.Zyre
         /// <param name="e"></param>
         private void InboxReceiveReady(object sender, NetMQSocketEventArgs e)
         {
-            var msg = Receive();
+            var msg = _inbox.ReceiveMultipartMessage();
             if (msg.FrameCount < 3)
             {
                 return;
