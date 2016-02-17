@@ -568,7 +568,7 @@ namespace NetMQ.Zyre
                 PurgePeer(existingPeer, endpoint);
             }
             peer = ZyrePeer.NewPeer(_peers, uuid, _loggerDelegate);
-            peer.SetOrigin(_name);
+            peer.Origin = _name;
             peer.Connect(_uuid, endpoint);
             Thread.Sleep(100); // allow some time so we don't lose messages
 
@@ -760,7 +760,7 @@ namespace NetMQ.Zyre
                 case ZreMsg.MessageId.Hello:
                     // Store properties from HELLO command into peer
                     var helloMessage = msg.Hello;
-                    peer.SetName(helloMessage.Name);
+                    peer.Name = helloMessage.Name;
                     peer.Headers = helloMessage.Headers;
 
                     // Tell the caller about the peer
@@ -775,7 +775,7 @@ namespace NetMQ.Zyre
                     }
 
                     // Now take peer's status from HELLO, after joining groups
-                    peer.SetStatus(helloMessage.Status);
+                    peer.Status = helloMessage.Status;
                     _loggerDelegate?.Invoke($"Hello message has been processed for peer: {peer}");
                     break;
                 case ZreMsg.MessageId.Whisper:

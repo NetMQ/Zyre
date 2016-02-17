@@ -26,16 +26,6 @@ namespace NetMQ.Zyre
         private DealerSocket _mailbox;
 
         /// <summary>
-        /// Peer's internal name
-        /// </summary>
-        private string _name;
-
-        /// <summary>
-        /// Origin node's internal name
-        /// </summary>
-        private string _origin;
-
-        /// <summary>
         /// Outgoing message sequence counter used for detecting lost messages
         /// </summary>
         private ushort _sentSequence;
@@ -55,6 +45,7 @@ namespace NetMQ.Zyre
 
         private ZyrePeer(Guid uuid, Action<string> loggerDelegate = null)
         {
+            Name = "";
             Uuid = uuid;
             _loggerDelegate = loggerDelegate;
             Ready = false;
@@ -214,14 +205,14 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer name
         /// </summary>
-        internal string Name => _name ?? "";
+        internal string Name { get; set; }
 
         /// <summary>
         /// Return peer cycle
         /// This gives us a state change count for the peer, which we can
         /// check against its claimed status, to detect message loss.
         /// </summary>
-        internal byte Status { get; private set; }
+        internal byte Status { get; set; }
 
         /// <summary>
         /// Increment status
@@ -232,31 +223,9 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Set peer name
+        /// Set Origin node's internal name, for logging
         /// </summary>
-        /// <param name="name"></param>
-        internal void SetName(string name)
-        {
-            _name = name;
-        }
-
-        /// <summary>
-        /// Set current node name, for logging
-        /// </summary>
-        /// <param name="originNodeName"></param>
-        internal void SetOrigin(string originNodeName)
-        {
-            _origin = originNodeName;
-        }
-
-        /// <summary>
-        /// Set peer status
-        /// </summary>
-        /// <param name="status"></param>
-        internal void SetStatus(byte status)
-        {
-            Status = status;
-        }
+        internal string Origin { get; set; }
 
         /// <summary>
         /// Return peer ready state. True when peer has said Hello to us
@@ -308,7 +277,7 @@ namespace NetMQ.Zyre
             {
                 if (_loggerDelegate != null)
                 {
-                    _loggerDelegate($"Sequence error for peer={_name} expect={_wantSequence}, got={msg.Sequence}");
+                    _loggerDelegate($"Sequence error for peer={Name} expected={_wantSequence}, got={msg.Sequence}");
                 }
                 return true;
             }
@@ -317,8 +286,8 @@ namespace NetMQ.Zyre
 
         public override string ToString()
         {
-            var name = string.IsNullOrEmpty(_name) ? "NotSet" : _name;
-            var origin = string.IsNullOrEmpty(_origin) ? "NotSet" : _origin;
+            var name = string.IsNullOrEmpty(Name) ? "NotSet" : Name;
+            var origin = string.IsNullOrEmpty(Origin) ? "NotSet" : Origin;
             return
                 $"[from origin:{origin} to name:{name} endpoint:{Endpoint} connected:{Connected} ready:{Ready} status:{Status} _sentSeq:{_sentSequence} _wantSeq:{_wantSequence} _ guidShort:{Uuid.ToShortString6()}]";
         }
