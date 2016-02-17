@@ -28,7 +28,6 @@ namespace SamplePeer
         public MainForm(string name)
         {
             InitializeComponent();
-            lblMessageReceived.Text = "";
             btnStop.Enabled = false;
             _connectedPeers = new List<Peer>();
             peerBindingSource.DataSource = _connectedPeers;
@@ -58,7 +57,7 @@ namespace SamplePeer
             var msg = e.Content.Pop().ConvertToString();
             var uuidShort = e.SenderUuid.ToShortString6();
             var str = string.Format("Shout from {0} to group={1}: {2}", uuidShort, e.GroupName, msg);
-            UpdateLblMessageReceived(str);
+            UpdateMessageReceived(str);
             EventsLogger($"Shout: {e.SenderName} {e.SenderUuid.ToShortString6()} shouted message {msg} to group:{e.GroupName}");
         }
 
@@ -67,7 +66,7 @@ namespace SamplePeer
             var msg = e.Content.Pop().ConvertToString();
             var uuidShort = e.SenderUuid.ToShortString6();
             var str = string.Format("Whisper from {0}: {1}", uuidShort, msg);
-            UpdateLblMessageReceived(str);
+            UpdateMessageReceived(str);
             EventsLogger($"Whisper: {e.SenderName} {e.SenderUuid.ToShortString6()} whispered message {msg}");
         }
 
@@ -156,7 +155,12 @@ namespace SamplePeer
             DisplayTitle();
             _connectedPeers.Clear();
         }
-        
+        public void MessageLogger(string str)
+        {
+            var msg = $"{DateTime.Now.ToString("h:mm:ss.fff")} {str}";
+            Logger(rtbMessages, msg);
+        }
+
         public void NodeLogger(string str)
         {
             var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -291,15 +295,15 @@ namespace SamplePeer
             }
         }
 
-        private void UpdateLblMessageReceived(string msg)
+        private void UpdateMessageReceived(string msg)
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(() => UpdateLblMessageReceived(msg)));
+                BeginInvoke(new MethodInvoker(() => UpdateMessageReceived(msg)));
             }
             else
             {
-                lblMessageReceived.Text = msg;
+                MessageLogger(msg);
             }
         }
 

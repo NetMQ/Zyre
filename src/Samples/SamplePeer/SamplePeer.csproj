@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Header.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -75,6 +76,7 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\DataSources\Group.datasource" />
+    <None Include="Properties\DataSources\Header.datasource" />
     <None Include="Properties\DataSources\Peer.datasource" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
