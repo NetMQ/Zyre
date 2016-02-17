@@ -46,11 +46,6 @@ namespace NetMQ.Zyre
         private ushort _wantSequence;
 
         /// <summary>
-        /// Peer headers
-        /// </summary>
-        private Dictionary<string, string> _headers;
-
-        /// <summary>
         /// Optional logger action passed into ctor
         /// </summary>
         private readonly Action<string> _loggerDelegate;
@@ -66,7 +61,7 @@ namespace NetMQ.Zyre
             Connected = false;
             _sentSequence = 0;
             _wantSequence = 0;
-            _headers = new Dictionary<string, string>();
+            Headers = new Dictionary<string, string>();
         }
 
         /// <summary>
@@ -88,7 +83,6 @@ namespace NetMQ.Zyre
         /// </summary>
         internal void Destroy()
         {
-            Debug.Assert(_mailbox != null, "Mailbox must not be null");
             Disconnect();
             Dispose();
         }
@@ -122,10 +116,10 @@ namespace NetMQ.Zyre
                     // SendTimeout = TimeSpan.Zero Instead of this, ZreMsg.Send() uses TrySend() with TimeSpan.Zero
                 }
             };
-            _loggerDelegate?.Invoke($"DealerSocket mailbox is connecting to peer at endpoint={endpoint} with identity={replyTo.ToShortString6()}");
             Endpoint = endpoint;
             Connected = true;
             Ready = false;
+            _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Connect)}() has connected its DealerSocket mailbox to peer={this}");
         }
 
         internal static byte[] GetIdentity(Guid replyTo)
@@ -267,16 +261,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return peer ready state. True when peer has said Hello to us
         /// </summary>
-        internal bool Ready { get; private set; }
-
-        /// <summary>
-        /// Set peer ready
-        /// </summary>
-        /// <param name="ready"></param>
-        internal void SetReady(bool ready)
-        {
-            Ready = ready;
-        }
+        internal bool Ready { get; set; }
 
         /// <summary>
         /// Get peer header value
@@ -287,7 +272,7 @@ namespace NetMQ.Zyre
         internal string Header(string key, string defaultValue)
         {
             string value;
-            if (!_headers.TryGetValue(key, out value))
+            if (!Headers.TryGetValue(key, out value))
             {
                 return defaultValue;
             }
@@ -295,22 +280,10 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Get peer headers table
+        /// Get or set peer headers table
         /// </summary>
         /// <returns></returns>
-        internal Dictionary<string, string> GetHeaders()
-        {
-            return _headers;
-        }
-
-        /// <summary>
-        /// Set peer headers from provided dictionary
-        /// </summary>
-        /// <returns></returns>
-        internal void SetHeaders(Dictionary<string, string> headers)
-        {
-            _headers = headers;
-        }
+        internal Dictionary<string, string> Headers { get; set; }
 
         /// <summary>
         /// Check if messages were lost from peer, returns true if they were

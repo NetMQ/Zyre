@@ -43,7 +43,6 @@ namespace SamplePeer
             }
             _name = _zyre.Name();
             _uuid = _zyre.Uuid();
-            _endpoint = _zyre.EndPoint(); // every time we start, we bind our RouterSocket to a new port
             _zyre.EnterEvent += ZyreEnterEvent;
             _zyre.StopEvent += ZyreStopEvent;
             _zyre.ExitEvent += ZyreExitEvent;
@@ -144,6 +143,8 @@ namespace SamplePeer
             btnStart.Enabled = false;
             btnStop.Enabled = true;
             _zyre.Start();
+            _endpoint = _zyre.EndPoint(); // every time we start, we bind our RouterSocket to a new port
+            DisplayTitle();
         }
 
         private void btnStop_Click(object sender, EventArgs e)
