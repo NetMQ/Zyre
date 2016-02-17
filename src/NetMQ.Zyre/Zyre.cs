@@ -134,7 +134,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Set UDP beacon discovery port; defaults to 5670, this call overrides
         /// that so you can create independent clusters on the same network, for
-        /// e.g. development vs. production. Has no effect after Zzyre.Start().
+        /// e.g. development vs. production. Has no effect after Zyre.Start().
         /// </summary>
         /// <param name="port">the UDP beacon discovery port override</param>
         public void SetPort(int port)
@@ -144,7 +144,7 @@ namespace NetMQ.Zyre
 
         /// <summary>
         /// Set UDP beacon discovery interval. Default is instant
-        /// beacon exploration followed by pinging every 1,000 msecs.
+        /// beacon exploration followed by pinging every 1,000 milliseconds.
         /// </summary>
         /// <param name="interval">beacon discovery interval</param>
         public void SetInterval(TimeSpan interval)
@@ -161,7 +161,6 @@ namespace NetMQ.Zyre
         public void SetInterface(string value)
         {
             // TODO
-            //  Implemented by zsys global for now
             // zsys_set_interface(value);
         }
 

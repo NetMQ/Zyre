@@ -221,7 +221,6 @@ namespace NetMQ.Zyre
             // Start polling on _inbox and _beacon
             _poller.Add(_inbox);
             _poller.Add(_beacon);
-            Thread.Sleep(100); // wait for poller so we don't miss messages
 
             //  Set broadcast/listen beacon
             PublishBeacon(_port);
@@ -573,7 +572,6 @@ namespace NetMQ.Zyre
             peer = ZyrePeer.NewPeer(_peers, uuid, _loggerDelegate);
             peer.Origin = _name;
             peer.Connect(_uuid, endpoint);
-            Thread.Sleep(100); // allow some time so we don't lose messages
 
             // Handshake discovery by sending HELLO as first message
             var helloMessage = new ZreMsg
