@@ -150,7 +150,6 @@ namespace NetMQ.Zyre
             {
                 msg.Sequence = ++_sentSequence;
                 _loggerDelegate?.Invoke($"{nameof(ZyrePeer)}.{nameof(Send)}() sending message={msg} to Endpoint={Endpoint}");
-                var tmp = _mailbox.Options.Identity;
                 var success = msg.Send(_mailbox);
                 if (!success)
                 {

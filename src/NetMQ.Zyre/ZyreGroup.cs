@@ -22,7 +22,7 @@ namespace NetMQ.Zyre
         /// </summary>
         /// <param name="name">name of the new group</param>
         /// <param name="container">container of groups</param>
-        /// <returns></returns>
+        /// <returns>the new group</returns>
         internal static ZyreGroup NewGroup(string name, Dictionary<string, ZyreGroup> container)
         {
             var group = new ZyreGroup(name);

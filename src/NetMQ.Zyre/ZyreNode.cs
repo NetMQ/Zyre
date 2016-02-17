@@ -276,7 +276,7 @@ namespace NetMQ.Zyre
         private bool IsValidBeacon(byte[] bytes, out Guid uuid, out int port)
         {
             uuid = Guid.Empty;
-            port = Int32.MinValue;
+            port = int.MinValue;
             if (bytes.Length != 22)
             {
                 return false;
@@ -410,7 +410,7 @@ namespace NetMQ.Zyre
                     if (!_ownGroups.TryGetValue(groupNameJoin, out groupJoin))
                     {
                         // Only send if we're not already in group
-                        var groupJoined = ZyreGroup.NewGroup(groupNameJoin, _ownGroups);
+                        ZyreGroup.NewGroup(groupNameJoin, _ownGroups);
 
                         // Update status before sending command
                         _status = _status == UbyteMax ? (byte)0 : ++_status;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using FluentAssertions;
 using NUnit.Framework;
@@ -28,7 +29,7 @@ namespace NetMQ.Zyre.Tests
         public void SimpleStartStopOneNode()
         {
             var node1Writer = new ConsoleLogger("node1");
-            using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite))
+            using (var node1 = new Zyre("node1", false, node1Writer.ConsoleWrite))
             {
                 node1.Start();
                 node1.Should().NotBeNull();
@@ -59,8 +60,8 @@ namespace NetMQ.Zyre.Tests
             var node2Writer = new ConsoleLogger("node2");
 
             // Create two nodes
-            using (var node1 = new Zyre("node1", node1Writer.ConsoleWrite))
-            using (var node2 = new Zyre("node2", node2Writer.ConsoleWrite))
+            using (var node1 = new Zyre("node1", false, node1Writer.ConsoleWrite))
+            using (var node2 = new Zyre("node2", false, node2Writer.ConsoleWrite))
             {
                 int major, minor, patch;
                 node1.Version(out major, out minor, out patch);
@@ -124,23 +125,49 @@ namespace NetMQ.Zyre.Tests
                 Console.WriteLine("node1 Shouting to Global");
                 node1.Shouts("GLOBAL", "Hello, World");
 
-                // Second node should receive ENTER, JOIN, and SHOUT
+                // Second node should receive ENTER, JOIN, JOIN and SHOUT
                 var msg = node2.Receive();
                 msg.Should().NotBeNull();
                 var command = msg.Pop().ConvertToString();
                 command.Should().Be("ENTER");
                 msg.FrameCount.Should().Be(4);
-                var peerId = msg.Pop().ConvertToString();
+                var peerIdBytes = msg.Pop().Buffer;
+                var peerId = new Guid(peerIdBytes);
+                peerId.Should().Be(uuid1);
                 var name = msg.Pop().ConvertToString();
                 name.Should().Be("node1");
-                var headersFrame = msg.Pop();
-                var address = msg.Pop().ConvertToString();
-                var endpoint = msg.Pop().ConvertToString();
 
-                headersFrame.Should().NotBeNull();
+                var headersBuffer = msg.Pop().Buffer;
+                var headers = Serialization.BinaryDeserialize<Dictionary<string, string>>(headersBuffer);
+                var address = msg.Pop().ConvertToString();
+                headers.Count.Should().Be(1);
+                headers["X-HELLO"].Should().Be("World");
+                address.Should().NotBeNullOrEmpty();
+
+                msg = node2.Receive();
+                msg.Should().NotBeNull();
+                command = msg.Pop().ConvertToString();
+                command.Should().Be("JOIN");
+                msg.FrameCount.Should().Be(3);
+
+                msg = node2.Receive();
+                msg.Should().NotBeNull();
+                command = msg.Pop().ConvertToString();
+                command.Should().Be("JOIN");
+                msg.FrameCount.Should().Be(3);
+
+                msg = node2.Receive();
+                msg.Should().NotBeNull();
+                command = msg.Pop().ConvertToString();
+                command.Should().Be("SHOUT");
 
                 Console.WriteLine("Stopping node2");
                 node2.Stop();
+                msg = node2.Receive();
+                msg.Should().NotBeNull();
+                command = msg.Pop().ConvertToString();
+                command.Should().Be("STOP");
+
                 Console.WriteLine("Stopping node1");
                 node1.Stop();
                 Thread.Sleep(100);

@@ -15,6 +15,7 @@ namespace NetMQ.Zyre
     /// </summary>
     public class Zyre : IDisposable
     {
+        private readonly bool _useEvents;
         public const int ZyreVersionMajor = 1;
         public const int ZyreVersionMinor = 1;
         public const int ZyreVersionPatch = 0;
@@ -51,9 +52,11 @@ namespace NetMQ.Zyre
         /// Create a Zyre API that communicates with a node on the ZRE bus.
         /// </summary>
         /// <param name="name">The name of the node</param>
+        /// <param name="useEvents">Set this to true to disable Receive() and instead subscribe to events for getting messages from peers</param>
         /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
-        public Zyre (string name, Action<string> loggerDelegate = null)
+        public Zyre (string name, bool useEvents = true, Action<string> loggerDelegate = null)
         {
+            _useEvents = useEvents;
             // Create front-to-back pipe pair for data traffic
             // outbox is passed to ZyreNode for sending Zyre message traffic back to _inbox
             PairSocket outbox;
@@ -63,9 +66,13 @@ namespace NetMQ.Zyre
             // All node control is done through _actor
 
             _actor = ZyreNode.Create(outbox, loggerDelegate);
-            _inboxPoller = new NetMQPoller();
-            _inbox.ReceiveReady += InboxReceiveReady;
-            _inboxPoller.RunAsync();
+
+            if (useEvents)
+            {
+                _inboxPoller = new NetMQPoller();
+                _inbox.ReceiveReady += InboxReceiveReady;
+                _inboxPoller.RunAsync();
+            }
 
             // Send name, if any, to node ending
             if (!string.IsNullOrEmpty(name))
@@ -170,8 +177,11 @@ namespace NetMQ.Zyre
         /// </summary>
         public void Start()
         {
-            _inboxPoller.Add(_inbox);
-            Thread.Sleep(100);
+            if (_useEvents)
+            {
+                _inboxPoller.Add(_inbox);
+                Thread.Sleep(100);
+            }
             _actor.SendFrame("START");
         }
 
@@ -183,8 +193,11 @@ namespace NetMQ.Zyre
         public void Stop()
         {
             _actor.SendFrame("STOP");
-            Thread.Sleep(1000); // wait for poller so we don't miss messages
-            _inboxPoller.Remove(_inbox);
+            if (_useEvents)
+            {
+                Thread.Sleep(1000); // wait for poller so we don't miss messages
+                _inboxPoller.Remove(_inbox);
+            }
         }
 
         /// <summary>
@@ -213,6 +226,10 @@ namespace NetMQ.Zyre
         /// <returns>message</returns>
         public NetMQMessage Receive()
         {
+            if (_useEvents)
+            {
+                throw new Exception("Disallowed due to the constructor used. Receive via events instead.");
+            }
             return _inbox.ReceiveMultipartMessage();
         }
 
@@ -257,7 +274,7 @@ namespace NetMQ.Zyre
         public void Shouts(string groupName, string format, params object[] args)
         {
             var value = string.Format(format, args);
-            _actor.SendMoreFrame("WHISPER").SendMoreFrame(groupName).SendFrame(value);
+            _actor.SendMoreFrame("SHOUT").SendMoreFrame(groupName).SendFrame(value);
         }
 
         /// <summary>
@@ -495,8 +512,11 @@ namespace NetMQ.Zyre
                 return;
 
             Stop();
-            _inboxPoller?.StopAsync();
-            _inboxPoller?.Dispose();
+            if (_useEvents)
+            {
+                _inboxPoller?.StopAsync();
+                _inboxPoller?.Dispose();
+            }
             _actor?.Dispose();
             _inbox?.Dispose();
         }

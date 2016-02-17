@@ -37,7 +37,7 @@ namespace SamplePeer
             _peerGroups = new List<Group>();
             peerGroupBindingSource.DataSource = _peerGroups;
             _headersByPeerGuid = new Dictionary<Guid, List<Header>>();
-            _zyre = new Zyre(_name, NodeLogger);
+            _zyre = new Zyre(_name, true, NodeLogger);
             if (!string.IsNullOrEmpty(name))
             {
                 _zyre.SetName(name);
