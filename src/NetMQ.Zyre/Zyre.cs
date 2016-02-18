@@ -47,12 +47,13 @@ namespace NetMQ.Zyre
         private string _endpoint;
 
         private readonly NetMQPoller _inboxPoller;
+        private string _interfaceName;
 
         /// <summary>
         /// Create a Zyre API that communicates with a node on the ZRE bus.
         /// </summary>
         /// <param name="name">The name of the node</param>
-        /// <param name="useEvents">Set this to true to disable Receive() and instead subscribe to events for getting messages from peers</param>
+        /// <param name="useEvents">Set this to true to disable Receive() and instead subscribe to events for getting messages from peers. Default is true.</param>
         /// <param name="loggerDelegate">An action to take for logging when _verbose is true. Default is null.</param>
         public Zyre (string name, bool useEvents = true, Action<string> loggerDelegate = null)
         {
@@ -84,6 +85,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return our node UUID string, after successful initialization
         /// </summary>
+        /// <returns>our node UUID string</returns>
         public Guid Uuid()
         {
             _actor.SendFrame("UUID");
@@ -96,7 +98,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return our node endpoint, after successful initialization.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>our node endpoint</returns>
         public string EndPoint()
         {
             _actor.SendFrame("ENDPOINT");
@@ -108,7 +110,7 @@ namespace NetMQ.Zyre
         /// Return our node name, after successful initialization. By default
         /// is taken from the UUID and shortened.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>our node name</returns>
         public string Name()
         {
             _actor.SendFrame("NAME");
@@ -117,7 +119,7 @@ namespace NetMQ.Zyre
         }
 
         /// <summary>
-        /// Set Name
+        /// Set Name (the public name of this node)
         /// </summary>
         /// <param name="name">the name to set</param>
         public void SetName(string name)
@@ -163,12 +165,12 @@ namespace NetMQ.Zyre
         /// Set network interface for UDP beacons. If you do not set this, NetMQ will
         /// choose an interface for you. On boxes with several interfaces you should
         /// specify which one you want to use, or strange things can happen.
+        /// This will only apply to the next START command.
         /// </summary>
-        /// <param name="value">the interface</param>
+        /// <param name="value">the interface. A null or empty string means to use the default interface</param>
         public void SetInterface(string value)
         {
-            // TODO
-            // zsys_set_interface(value);
+            _interfaceName = value ?? "";
         }
 
         /// <summary>
@@ -182,7 +184,7 @@ namespace NetMQ.Zyre
                 _inboxPoller.Add(_inbox);
                 Thread.Sleep(100);
             }
-            _actor.SendFrame("START");
+            _actor.SendMoreFrame("START").SendFrame(_interfaceName ?? "");
         }
 
         /// <summary>
@@ -221,7 +223,7 @@ namespace NetMQ.Zyre
 
         /// <summary>
         /// Receive next message from network; the message may be a control.
-        /// message (ENTER, EXIT, JOIN, LEAVE) or data (WHISPER, SHOUT).
+        /// message (ENTER, EXIT, JOIN, LEAVE, STOP, EVASIVE) or data (WHISPER, SHOUT).
         /// </summary>
         /// <returns>message</returns>
         public NetMQMessage Receive()
@@ -319,7 +321,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return list of currently joined groups.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>list of currently joined groups</returns>
         public List<string> OwnGroups()
         {
             _actor.SendFrame("OWN GROUPS");
@@ -329,8 +331,10 @@ namespace NetMQ.Zyre
 
         /// <summary>
         /// Return list of groups known through connected peers.
+        /// The list includes every peer group ever seen by this instance.
+        /// The list can grow but it can never shrink. 
         /// </summary>
-        /// <returns></returns>
+        /// <returns>list of groups known through connected peers</returns>
         public List<string> PeerGroups()
         {
             _actor.SendFrame("PEER GROUPS");
@@ -342,6 +346,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return the node socket, for direct polling of the socket
         /// </summary>
+        /// <returns>the node socket</returns>
         public PairSocket Socket
         {
             get { return _inbox; }
@@ -350,9 +355,9 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Return the Zyre version for run-time API detection
         /// </summary>
-        /// <param name="major"></param>
-        /// <param name="minor"></param>
-        /// <param name="patch"></param>
+        /// <param name="major">major version</param>
+        /// <param name="minor">minor version</param>
+        /// <param name="patch">patch number</param>
         public void Version(out int major, out int minor, out int patch)
         {
             major = ZyreVersionMajor;
@@ -360,6 +365,9 @@ namespace NetMQ.Zyre
             patch = ZyreVersionPatch;
         }
 
+        /// <summary>
+        /// Tell the ZyreNode to do its Dump() routine to the _defaultLogger (if there is one).
+        /// </summary>
         public void Dump()
         {
             _actor.SendFrame("DUMP");

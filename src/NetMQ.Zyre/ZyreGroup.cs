@@ -62,7 +62,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Send message to all peers in group
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">the message</param>
         internal void Send(ZreMsg msg)
         {
             foreach (var peer in _peers.Values)

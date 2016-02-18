@@ -7,6 +7,11 @@ namespace NetMQ.Zyre
 {
     public static class ExtensionMethods
     {
+        /// <summary>
+        /// Get the first 6 characters of the ToString() of the guid.
+        /// </summary>
+        /// <param name="guid">the GUID</param>
+        /// <returns>the first 6 characters of the ToString()</returns>
         public static string ToShortString6(this Guid guid)
         {
             var str = guid.ToString();
