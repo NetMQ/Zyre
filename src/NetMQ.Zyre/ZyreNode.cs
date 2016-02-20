@@ -201,7 +201,7 @@ namespace NetMQ.Zyre
             // Create the _beacon and bind the _inbox
             _beacon = new NetMQBeacon();
             _beacon.ReceiveReady += OnBeaconReady;
-            _beacon.Configure(interfaceName, _beaconPort);
+            _beacon.Configure(_beaconPort, interfaceName);
 
             // Bind our router port to the host. Our hostName is provided by the beacon.
             var address = $"tcp://{_beacon.BoundTo}";
