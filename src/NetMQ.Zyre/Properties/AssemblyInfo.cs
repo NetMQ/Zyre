@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("NetMQ.Zyre")]
-[assembly: AssemblyDescription("C# implementation of ZeroMQ Realtime Exchange Protocol")]
+[assembly: AssemblyDescription("C# implementation of ZeroMQ Realtime Exchange Protocol. Automatic discovery of nodes anywhere on the network!")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("NetMQ.Zyre")]
 [assembly: AssemblyProduct("NetMQ.Zyre")]

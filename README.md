@@ -1,6 +1,8 @@
 NetMQ.Zyre
 ==========
 
+[![NuGet](https://img.shields.io/nuget/v/NetMQ.Zyre.svg)](https://www.nuget.org/packages/NetMQ.Zyre/) [![Build](https://img.shields.io/appveyor/ci/dalebrubaker/netmq.zyre.svg)](https://ci.appveyor.com/project/zyre/netmq.zyre)
+
 Zyre does local area discovery and clustering. A Zyre node broadcasts UDP beacons, and connects to peers that it finds. This class wraps a Zyre node with a message-based API.
 
 NetMQ.Zyre is the C\# implementation of the ZeroMQ RealMQ Realtime Exchange Protocol found at <http://rfc.zeromq.org/spec:36>. Other implementations exist for C, Java, Python and more. This is version 2, **not** the first version (from <http://rfc.zeromq.org/spec:20>).
