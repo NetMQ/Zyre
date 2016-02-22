@@ -4,5 +4,3 @@ before_build:
 build:
   verbosity: minimal
 version: 1.0.0-{build}
-nuget:
-  project_feed: true
