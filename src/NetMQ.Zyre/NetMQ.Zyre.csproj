@@ -112,6 +112,7 @@
     <Compile Include="ZyreEvents\ZyreEventHeader.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="NetMQ.Zyre.nuspec" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
