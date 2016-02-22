@@ -3,5 +3,6 @@ before_build:
 - cmd: nuget restore src\NetMQ.Zyre.sln
 build:
   verbosity: minimal
+version: 1.0.0-{build}
 nuget:
   project_feed: true
