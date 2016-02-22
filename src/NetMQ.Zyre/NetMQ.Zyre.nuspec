@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+  <metadata>
+    <id>NetMQ.Zyre</id>
+    <version>$version$</version>
+    <title>NetMQ Zyre</title>
+    <authors>NetMQ</authors>
+    <owners>NetMQ</owners>
+    <licenseUrl>https://github.com/NetMQ/Zyre/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/NetMQ/Zyre</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/NetMQ/Zyre/img/NetMQ.ico</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>C# implementation of ZeroMQ Realtime Exchange Protocol. Automatic discovery of nodes anywhere on the network!</description>
+    <releaseNotes>
+      First beta release. Feedback welcome.
+    </releaseNotes>
+    <copyright>Copyright 2016 Dale Brubaker and Contributors</copyright>
+    <tags>Zyre .NET C# ZeroMQ 0MQ CLRZMQ NetMQ Messaging ZMQ transport distributed discovery</tags>
+    <dependencies>
+      <dependency id="AsyncIO" version="0.1.18.0"/>
+      <dependency id="NetMQ" version="4.0.0-beta" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\NetMQ.Zyre.dll" target="lib\net40\" />
+    <file src="bin\Release\NetMQ.Zyre.xml" target="lib\net40\" />
+  </files>
+</package>
