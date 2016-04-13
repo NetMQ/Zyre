@@ -38,7 +38,7 @@ namespace NetMQ.Zyre
         /// <summary>
         /// Beacon port number
         /// </summary>
-        private readonly int _beaconPort;
+        private int _beaconPort;
 
         /// <summary>
         /// Beacon interval
@@ -361,7 +361,7 @@ namespace NetMQ.Zyre
                     break;
                 case "SET PORT":
                     var str = request.Pop().ConvertToString();
-                    Int32.TryParse(str, out _port);
+                    Int32.TryParse(str, out _beaconPort);
                     break;
                 case "SET INTERVAL":
                     var intervalStr = request.Pop().ConvertToString();

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("NetMQ.Zyre")]
 [assembly: AssemblyProduct("NetMQ.Zyre")]
-[assembly: AssemblyCopyright("Copyright © 2016 Dale Brubaker and Contributors")]
+[assembly: AssemblyCopyright("Copyright © 2016 Dale A. Brubaker and Contributors")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
