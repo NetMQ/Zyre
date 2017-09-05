@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMQ.Zyre", "NetMQ.Zyre\NetMQ.Zyre.csproj", "{4D648749-20A6-4A53-A313-F67DA1BA712E}"
 EndProject
@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{208C
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SamplePeer", "Samples\SamplePeer\SamplePeer.csproj", "{06C728A8-6861-42BB-8567-1397D61A6FC2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMQ.Zyre.Standard", "NetMQ.Zyre\NetMQ.Zyre.Standard.csproj", "{F83B9281-DE44-4A38-A2FE-19F5041B104A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,11 +73,26 @@ Global
 		{06C728A8-6861-42BB-8567-1397D61A6FC2}.Release|x64.Build.0 = Release|Any CPU
 		{06C728A8-6861-42BB-8567-1397D61A6FC2}.Release|x86.ActiveCfg = Release|Any CPU
 		{06C728A8-6861-42BB-8567-1397D61A6FC2}.Release|x86.Build.0 = Release|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Debug|x64.Build.0 = Debug|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Debug|x86.Build.0 = Debug|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Release|x64.ActiveCfg = Release|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Release|x64.Build.0 = Release|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Release|x86.ActiveCfg = Release|Any CPU
+		{F83B9281-DE44-4A38-A2FE-19F5041B104A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{06C728A8-6861-42BB-8567-1397D61A6FC2} = {208C9C0C-7DF4-4145-887C-81FCF90371AD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DD65A201-669B-41EF-8C2A-F8B58BA0866F}
 	EndGlobalSection
 EndGlobal
