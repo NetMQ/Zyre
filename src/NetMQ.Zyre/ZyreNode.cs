@@ -453,6 +453,30 @@ namespace NetMQ.Zyre
                         _ownGroups.Remove(groupNameLeave);
                     }
                     break;
+                case "PING":
+                    var uuid_ping_target = PopGuid(request);
+                    ZyrePeer peer_ping_target;
+                    if (_peers.TryGetValue(uuid_ping_target, out peer_ping_target))
+                    {
+                        var msg = new ZreMsg
+                        {
+                            Id = ZreMsg.MessageId.Ping,
+                        };
+                        peer_ping_target.Send(msg);
+                    }
+                    break;
+                case "PING-OK":
+                    var uuid_target = PopGuid(request);
+                    ZyrePeer peer_target;
+                    if (_peers.TryGetValue(uuid_target, out peer_target))
+                    {
+                        var msg = new ZreMsg
+                        {
+                            Id = ZreMsg.MessageId.PingOk,
+                        };
+                        peer_target.Send(msg);
+                    }
+                    break;
                 case "PEERS":
                     // Send the list of the _peers keys
                     var peersKeyBuffer = Serialization.BinarySerialize(_peers.Keys.ToList());
@@ -796,9 +820,11 @@ namespace NetMQ.Zyre
                     Debug.Assert(msg.Leave.Status == peer.Status);
                     break;
                 case ZreMsg.MessageId.Ping:
+                    _actor.SendMoreFrame("PING-OK").SendMoreFrame(uuid.ToByteArray());
                     break;
                 case ZreMsg.MessageId.PingOk:
-                    Debug.Fail("Unexpected");
+                    // Good, the peer is alive, we will reset our timers 
+                    // with the peer.Refresh(); call below.
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -869,7 +895,11 @@ namespace NetMQ.Zyre
                 // it would be nicer to use a proper state machine
                 // for peer management.
                 _loggerDelegate?.Invoke($"Peer seems dead/slow: name={peer.Name} endpoint={peer.Endpoint}");
+                
                 ZreMsg.SendPing(_outbox, 0);
+
+                // Send a ping request to the peer
+                _actor.SendMoreFrame("PING").SendMoreFrame(peer.Uuid.ToByteArray());
 
                 // Inform the calling application this peer is being evasive
                 _outbox.SendMoreFrame("EVASIVE");
