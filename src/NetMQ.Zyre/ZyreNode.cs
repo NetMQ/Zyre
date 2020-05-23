@@ -820,11 +820,15 @@ namespace NetMQ.Zyre
                     Debug.Assert(msg.Leave.Status == peer.Status);
                     break;
                 case ZreMsg.MessageId.Ping:
-                    _actor.SendMoreFrame("PING-OK").SendMoreFrame(uuid.ToByteArray());
+                    // Respond to a PING request with PING-OK, always
+                    _actor.SendMoreFrame("PING-OK").SendFrame(uuid.ToByteArray());
+                    // Notify Zyre application PING came in
+                    _outbox.SendMoreFrame("PING").SendMoreFrame(uuid.ToByteArray()).SendFrame(peer.Name);
                     break;
                 case ZreMsg.MessageId.PingOk:
-                    // Good, the peer is alive, we will reset our timers 
+                	// Good, the peer is alive, we will reset our timers 
                     // with the peer.Refresh(); call below.
+                    _outbox.SendMoreFrame("PING-OK").SendMoreFrame(uuid.ToByteArray()).SendFrame(peer.Name);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

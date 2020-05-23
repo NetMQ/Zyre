@@ -431,6 +431,12 @@ namespace NetMQ.Zyre
                 case "EVASIVE":
                     OnEvasiveEvent(new ZyreEventEvasive(senderUuid, name));
                     break;
+                case "PING":
+                    OnPingEvent(new ZyreEventPing(senderUuid, name));
+                    break;
+                case "PING-OK":
+                    OnPingOkEvent(new ZyreEventPingOk(senderUuid, name));
+                    break;
                 default:
                     throw new ArgumentException(msgType);
             }
@@ -444,11 +450,25 @@ namespace NetMQ.Zyre
         public event EventHandler<ZyreEventExit> ExitEvent;
         public event EventHandler<ZyreEventStop> StopEvent;
         public event EventHandler<ZyreEventEvasive> EvasiveEvent;
+        public event EventHandler<ZyreEventPing> PingEvent;
+        public event EventHandler<ZyreEventPingOk> PingOkEvent;
 
         private void OnEvasiveEvent(ZyreEventEvasive evasiveEvent)
         {
             var temp = EvasiveEvent; // for thread safety
             temp?.Invoke(this, evasiveEvent);
+        }
+
+        private void OnPingEvent(ZyreEventPing pingEvent)
+        {
+            var temp = PingEvent; // for thread safety
+            temp?.Invoke(this, pingEvent);
+        }
+
+        private void OnPingOkEvent(ZyreEventPingOk pingOkEvent)
+        {
+            var temp = PingOkEvent; // for thread safety
+            temp?.Invoke(this, pingOkEvent);
         }
 
         private void OnExitEvent(ZyreEventExit exitEvent)
